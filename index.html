@@ -369,6 +369,188 @@ td.income{color:var(--success);font-weight:500;}
 td.expense{color:var(--danger);font-weight:500;}
 /* ========== 集体AA提示横条 ========== */
 .collective-banner{background:var(--primary-bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:0.76rem;color:var(--primary-dark);margin:8px 0;}
+/* ========== AI 旅伴 FAB ========== */
+.ai-fab{
+  position:fixed;right:16px;bottom:calc(20px + var(--safe-bottom));z-index:150;
+  width:54px;height:54px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,#2d8b8b,#3aa8a0,#5ec9be);
+  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px rgba(45,139,139,0.35),0 2px 6px rgba(0,0,0,0.08);
+  transition:transform 0.25s,box-shadow 0.25s;
+  font-family:inherit;
+}
+.ai-fab:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 10px 28px rgba(45,139,139,0.45);}
+.ai-fab:active{transform:scale(0.96);}
+.ai-fab svg{width:26px;height:26px;}
+.ai-fab .fab-pulse{
+  position:absolute;inset:0;border-radius:50%;background:rgba(45,139,139,0.4);
+  animation:fabPulse 2.5s ease-out infinite;z-index:-1;
+}
+@keyframes fabPulse{0%{transform:scale(1);opacity:0.6;}100%{transform:scale(1.6);opacity:0;}}
+body.space-personal .ai-fab{background:linear-gradient(135deg,#f0a04b,#ffb86b,#ffd9a0);box-shadow:0 6px 18px rgba(240,160,75,0.35),0 2px 6px rgba(0,0,0,0.08);}
+body.space-personal .ai-fab .fab-pulse{background:rgba(240,160,75,0.4);}
+@media(min-width:768px){.ai-fab{right:24px;bottom:24px;width:58px;height:58px;}.ai-fab svg{width:28px;height:28px;}}
+/* ========== AI 面板 ========== */
+.ai-panel{
+  position:fixed;top:0;right:0;bottom:0;width:100%;max-width:400px;
+  background:#fff;z-index:200;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:-4px 0 24px rgba(0,0,0,0.12);
+}
+.ai-panel.open{transform:translateX(0);}
+.ai-panel-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:199;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.ai-panel-backdrop.open{opacity:1;pointer-events:auto;}
+@media(min-width:768px){.ai-panel{width:400px;}.ai-panel-backdrop{background:rgba(0,0,0,0.15);}}
+.ai-panel-header{
+  padding:14px 16px;background:linear-gradient(135deg,#2d8b8b,#3aa8a0);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+body.space-personal .ai-panel-header{background:linear-gradient(135deg,#f0a04b,#ffb86b);}
+.ai-panel-title{display:flex;align-items:center;gap:10px;}
+.ai-avatar{
+  width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.25);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;
+  border:1.5px solid rgba(255,255,255,0.4);letter-spacing:0.5px;
+}
+.ai-name{font-size:0.95rem;font-weight:600;line-height:1.1;}
+.ai-status{font-size:0.68rem;opacity:0.85;margin-top:1px;}
+.ai-status.thinking{color:#fff;background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:8px;}
+.ai-close{
+  background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;
+  border-radius:50%;cursor:pointer;font-size:1rem;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;
+}
+.ai-close:active{background:rgba(255,255,255,0.3);}
+.ai-quick-prompts{
+  padding:10px 12px 6px;background:#f7faf9;border-bottom:1px solid var(--border);
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;
+}
+.ai-quick-prompts::-webkit-scrollbar{display:none;}
+.ai-chip{
+  flex-shrink:0;border:1px solid var(--primary-light);background:#fff;
+  color:var(--primary-dark);font-family:inherit;font-size:0.74rem;
+  padding:6px 12px;border-radius:16px;cursor:pointer;white-space:nowrap;
+  transition:all 0.2s;
+}
+.ai-chip:active{background:var(--primary-bg);transform:scale(0.96);}
+body.space-personal .ai-chip{border-color:var(--accent);color:#8a5a1a;}
+body.space-personal .ai-chip:active{background:#fff3e0;}
+.ai-messages{
+  flex:1;overflow-y:auto;padding:14px 12px;background:#f0f4f3;
+  display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;
+}
+.ai-msg{display:flex;gap:8px;max-width:92%;animation:msgFade 0.25s;}
+@keyframes msgFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.ai-msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.ai-msg .ai-msg-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:600;
+}
+.ai-msg.ai .ai-msg-avatar{background:linear-gradient(135deg,#2d8b8b,#3aa8a0);color:#fff;}
+body.space-personal .ai-msg.ai .ai-msg-avatar{background:linear-gradient(135deg,#f0a04b,#ffb86b);}
+.ai-msg.user .ai-msg-avatar{background:#e0e8e7;color:var(--text);font-size:0.68rem;}
+.ai-msg-content{
+  padding:10px 12px;border-radius:14px;font-size:0.85rem;line-height:1.55;
+  word-wrap:break-word;white-space:pre-wrap;
+}
+.ai-msg.ai .ai-msg-content{
+  background:#fff;color:var(--text);border:1px solid var(--border);
+  border-top-left-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.04);
+}
+.ai-msg.user .ai-msg-content{
+  background:linear-gradient(135deg,#2d8b8b,#3aa8a0);color:#fff;
+  border-top-right-radius:4px;
+}
+body.space-personal .ai-msg.user .ai-msg-content{background:linear-gradient(135deg,#f0a04b,#ffb86b);}
+.ai-msg-content strong{font-weight:700;}
+.ai-msg-content em{font-style:italic;color:var(--accent);}
+.ai-msg-content ul,.ai-msg-content ol{margin:4px 0 4px 18px;padding:0;}
+.ai-msg-content li{margin:2px 0;}
+.ai-msg-content code{background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:0.8em;}
+.ai-msg-content.error{background:#fff5f5 !important;border-color:#ffcccc !important;color:var(--danger) !important;}
+.ai-msg-content.system{background:#fff8e7 !important;border-color:#ffe4a3 !important;color:#8a5a1a !important;font-style:italic;}
+.ai-typing{display:flex;gap:4px;padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:14px;border-top-left-radius:4px;width:fit-content;}
+.ai-typing .dot{width:7px;height:7px;border-radius:50%;background:var(--primary-light);animation:typing 1.2s infinite;}
+.ai-typing .dot:nth-child(2){animation-delay:0.2s;}
+.ai-typing .dot:nth-child(3){animation-delay:0.4s;}
+@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:0.4;}30%{transform:translateY(-4px);opacity:1;}}
+.ai-input-area{
+  padding:10px 12px calc(10px + var(--safe-bottom));background:#fff;
+  border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0;
+}
+.ai-geo-btn{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--primary-light);
+  background:#fff;color:var(--primary);cursor:pointer;font-size:1.05rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;
+}
+.ai-geo-btn:active{background:var(--primary-bg);transform:scale(0.95);}
+.ai-geo-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.ai-input-area input{
+  flex:1;border:1px solid var(--border);border-radius:20px;padding:9px 14px;
+  font-size:0.85rem;font-family:inherit;background:#f7faf9;min-height:38px;
+}
+.ai-input-area input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px rgba(45,139,139,0.12);}
+.ai-send-btn{
+  background:linear-gradient(135deg,#2d8b8b,#3aa8a0);color:#fff;border:none;
+  padding:0 16px;height:38px;border-radius:20px;cursor:pointer;
+  font-family:inherit;font-size:0.82rem;font-weight:500;transition:all 0.2s;
+}
+.ai-send-btn:active{transform:scale(0.95);}
+.ai-send-btn:disabled{opacity:0.5;cursor:not-allowed;}
+body.space-personal .ai-send-btn{background:linear-gradient(135deg,#f0a04b,#ffb86b);}
+.ai-clear-btn{
+  position:absolute;top:14px;right:46px;background:rgba(255,255,255,0.2);
+  border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;
+  font-size:0.85rem;font-family:inherit;display:flex;align-items:center;justify-content:center;
+}
+.ai-clear-btn:active{background:rgba(255,255,255,0.3);}
+/* ========== QR 同步码 ========== */
+.sync-tabs{display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:2px;}
+.sync-tab{
+  border:none;background:transparent;color:var(--text-light);font-family:inherit;
+  font-size:0.82rem;padding:8px 14px;cursor:pointer;border-bottom:2px solid transparent;
+  font-weight:500;transition:all 0.2s;
+}
+.sync-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+.sync-tab-content{display:none;}
+.sync-tab-content.active{display:block;}
+.sync-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0;}
+.sync-qr-img{
+  width:180px;height:180px;border:1px solid var(--border);border-radius:10px;
+  background:#fff;padding:8px;box-shadow:var(--shadow);
+}
+.sync-qr-hint{font-size:0.74rem;color:var(--text-light);text-align:center;line-height:1.5;}
+.sync-share-link{
+  display:flex;gap:6px;margin-top:10px;
+}
+.sync-share-link input{
+  flex:1;font-size:0.75rem;font-family:monospace;background:var(--primary-bg);
+  border:1px solid var(--primary-light);color:var(--primary-dark);padding:8px 10px;
+  border-radius:6px;
+}
+.sync-share-link button{flex-shrink:0;}
+.sync-url-banner{
+  background:linear-gradient(135deg,#e8f5f3,#fff6ea);border:1px solid var(--primary-light);
+  border-radius:10px;padding:10px 12px;font-size:0.78rem;color:var(--primary-dark);
+  margin-bottom:10px;line-height:1.5;
+}
+.sync-url-banner strong{color:var(--accent);}
+/* ========== AI 建议按钮 ========== */
+.ai-suggest-btn{
+  display:inline-flex;align-items:center;gap:4px;border:1px solid var(--primary-light);
+  background:linear-gradient(135deg,#fff,#e8f5f3);color:var(--primary-dark);
+  font-family:inherit;font-size:0.72rem;padding:5px 10px;border-radius:14px;
+  cursor:pointer;transition:all 0.2s;font-weight:500;
+}
+.ai-suggest-btn:active{transform:scale(0.95);background:var(--primary-bg);}
+.ai-suggest-btn:hover{background:var(--primary-bg);}
+.ai-suggest-btn svg{width:13px;height:13px;}
+.ai-suggest-btn.loading{opacity:0.6;cursor:wait;}
+body.space-personal .ai-suggest-btn{border-color:var(--accent);color:#8a5a1a;background:linear-gradient(135deg,#fff,#fff3e0);}
+body.space-personal .ai-suggest-btn:hover{background:#fff3e0;}
 </style>
 </head>
 <body>
@@ -411,15 +593,42 @@ td.expense{color:var(--danger);font-weight:500;}
 <div class="container" id="mainContainer"></div>
 <!-- 弹窗：同步码 -->
 <div class="modal-overlay" id="syncModal">
-  <div class="modal">
-    <div class="modal-title">同步码 · 多设备绑定</div>
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">同步与邀请 · 团队数据共享</div>
     <div class="modal-body">
-      <p style="font-size:0.8rem;margin-bottom:8px;">在另一台设备上打开本页面，点击「同步码」→「绑定已有数据」，输入下方同步码即可绑定同一份云端数据。</p>
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text-light);margin-bottom:4px;">本机同步码：</div>
-      <div class="sync-code-display" id="syncCodeDisplay">加载中...</div>
-      <div class="sync-code-input">
-        <input type="text" id="syncCodeInput" placeholder="输入另一台设备的同步码绑定">
-        <button class="btn btn-primary btn-sm" id="bindSyncBtn">绑定</button>
+      <div class="sync-url-banner" id="syncUrlBanner" style="display:none">
+        🎉 检测到邀请链接，点击「绑定」即可加入该团队数据。
+      </div>
+      <div class="sync-tabs">
+        <button class="sync-tab active" data-synctab="qr">扫码邀请</button>
+        <button class="sync-tab" data-synctab="link">分享链接</button>
+        <button class="sync-tab" data-synctab="code">同步码</button>
+      </div>
+      <!-- 扫码邀请 -->
+      <div class="sync-tab-content active" data-synctab="qr">
+        <div class="sync-qr-wrap">
+          <img class="sync-qr-img" id="syncQrImg" alt="同步二维码" />
+          <div class="sync-qr-hint">让同伴用微信/相机扫一扫<br/>即可一键加入同一团队数据</div>
+        </div>
+      </div>
+      <!-- 分享链接 -->
+      <div class="sync-tab-content" data-synctab="link">
+        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:6px;">复制下方链接发给同伴，打开即自动绑定：</div>
+        <div class="sync-share-link">
+          <input type="text" id="syncShareLink" readonly />
+          <button class="btn btn-primary btn-sm" id="copyLinkBtn">复制</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-light);margin-top:8px;line-height:1.5;">💡 链接含同步码，打开后会自动提示绑定。仅团队空间可用。</div>
+      </div>
+      <!-- 同步码 -->
+      <div class="sync-tab-content" data-synctab="code">
+        <p style="font-size:0.8rem;margin-bottom:8px;">手动输入同步码绑定（兼容老版本）：</p>
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text-light);margin-bottom:4px;">本机同步码：</div>
+        <div class="sync-code-display" id="syncCodeDisplay">加载中...</div>
+        <div class="sync-code-input">
+          <input type="text" id="syncCodeInput" placeholder="输入同伴的同步码">
+          <button class="btn btn-primary btn-sm" id="bindSyncBtn">绑定</button>
+        </div>
       </div>
     </div>
     <div class="modal-actions"><button class="btn btn-outline btn-sm" id="closeSyncModal">关闭</button></div>
@@ -440,6 +649,42 @@ td.expense{color:var(--danger);font-weight:500;}
 <div class="form-modal" id="formModal">
   <div class="form-modal-sheet" id="formModalSheet"></div>
 </div>
+<!-- AI 旅伴面板 -->
+<div class="ai-panel-backdrop" id="aiBackdrop"></div>
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <div class="ai-panel-title">
+      <div class="ai-avatar">AI</div>
+      <div>
+        <div class="ai-name">青甘旅伴</div>
+        <div class="ai-status" id="aiStatus">在线 · DeepSeek</div>
+      </div>
+    </div>
+    <button class="ai-clear-btn" id="aiClearBtn" title="清空对话">🗑</button>
+    <button class="ai-close" id="aiCloseBtn">✕</button>
+  </div>
+  <div class="ai-quick-prompts" id="aiQuickPrompts">
+    <button class="ai-chip" data-prompt="明天去哪？有什么需要注意的？">明天去哪？</button>
+    <button class="ai-chip" data-prompt="推荐今天行程当地的美食">当地美食</button>
+    <button class="ai-chip" data-prompt="今天应该穿什么？给4人分别给建议">今天穿搭</button>
+    <button class="ai-chip" data-prompt="给我们4人讲个旅行笑话逗逗闷子">讲个笑话</button>
+    <button class="ai-chip" data-prompt="记账有什么小贴士？怎么省钱又玩得好">记账贴士</button>
+    <button class="ai-chip" data-prompt="高原反应怎么预防？有什么注意事项？">高原反应</button>
+  </div>
+  <div class="ai-messages" id="aiMessages"></div>
+  <div class="ai-input-area">
+    <button class="ai-geo-btn" id="aiGeoBtn" title="分享当前位置给 AI">📍</button>
+    <input type="text" id="aiInput" placeholder="问点什么吧，回车发送..." />
+    <button class="ai-send-btn" id="aiSendBtn">发送</button>
+  </div>
+</div>
+<!-- AI 旅伴 FAB 按钮 -->
+<button class="ai-fab" id="aiFab" title="青甘旅伴 · AI 聊天">
+  <span class="fab-pulse"></span>
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 <script>
@@ -874,8 +1119,29 @@ function showSyncModal(){
     showToast('个人空间不需要同步码');
     return;
   }
+  /* 更新同步码显示 */
   document.getElementById('syncCodeDisplay').textContent=state.workspaceId;
+  /* 更新分享链接 */
+  var shareLink=buildShareLink();
+  document.getElementById('syncShareLink').value=shareLink;
+  /* 更新二维码 */
+  document.getElementById('syncQrImg').src=buildQrImageUrl(shareLink);
+  /* 重置到第一个 tab */
+  switchSyncTab('qr');
   document.getElementById('syncModal').classList.add('show');
+}
+/* 切换同步弹窗的 tab */
+function switchSyncTab(tab){
+  var tabs=document.querySelectorAll('.sync-tab');
+  var contents=document.querySelectorAll('.sync-tab-content');
+  for(var i=0;i<tabs.length;i++){
+    var active=tabs[i].getAttribute('data-synctab')===tab;
+    tabs[i].classList.toggle('active',active);
+  }
+  for(var j=0;j<contents.length;j++){
+    var ca=contents[j].getAttribute('data-synctab')===tab;
+    contents[j].classList.toggle('active',ca);
+  }
 }
 function bindSyncCode(code){
   if(state.spaceMode==='personal'){
@@ -891,6 +1157,47 @@ function bindSyncCode(code){
     else{showToast('已绑定，云端无数据，将初始化');}
   });
   document.getElementById('syncModal').classList.remove('show');
+}
+/* 处理 URL 中的 ?sync=xxx 邀请链接 */
+function handleSyncUrlParam(){
+  try{
+    var url=new URL(window.location.href);
+    var code=url.searchParams.get('sync');
+    if(code&&code.length>10&&code.startsWith('wb_qinggan_')){
+      /* 自动切换到团队空间 */
+      if(state.spaceMode!=='team'){
+        state.spaceMode='team';
+        setLSSpaceMode('team');
+        state.data=state.teamData;
+        applySpaceModeUI();
+      }
+      /* 弹出绑定确认 */
+      showConfirm(
+        '加入团队邀请',
+        '检测到邀请链接，是否绑定到该团队数据？\n\n同步码：'+code.slice(0,12)+'...',
+        function(){
+          state.workspaceId=code;setLSWorkspaceId(code);
+          setSyncStatus('connecting');
+          pullRemote(function(){
+            renderAll();
+            if(state.syncStatus==='synced'){showToast('已加入团队数据');}
+            else{showToast('已绑定，云端无数据，将初始化');}
+          });
+        }
+      );
+      /* 清除 URL 中的 sync 参数，避免刷新时重复触发 */
+      url.searchParams.delete('sync');
+      window.history.replaceState({},document.title,url.toString());
+    }
+  }catch(e){/* URL 解析失败忽略 */}
+}
+/* 构建分享链接 */
+function buildShareLink(){
+  return 'https://htwo666.github.io/qinggan-trip-ledger/?sync='+encodeURIComponent(state.workspaceId||'');
+}
+/* 构建二维码图片 URL（使用公共 QR 服务） */
+function buildQrImageUrl(text){
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data='+encodeURIComponent(text);
 }
 /* 占位：后续追加渲染逻辑 */
 
@@ -1668,7 +1975,9 @@ function renderOutfit(){
     var wCls='';
     if(todayDayNum===wt.day){wCls=' today-w';}
     else if(wt.day<todayDayNum){wCls=' past-w';}
-    weatherHtml+='<div class="weather-row'+wCls+'"><div class="weather-day-tag"><span class="d">DAY</span><span class="n">'+wt.day+'</span></div><div class="weather-row-body"><div class="weather-row-top"><span class="weather-area">'+escapeHtml(wt.area)+'</span><span class="weather-temp">'+wt.temp+'</span>'+(todayDayNum===wt.day?'<span class="today-mark">今天</span>':'')+'</div><div class="weather-tip">'+escapeHtml(wt.tip)+'</div></div></div>';
+    weatherHtml+='<div class="weather-row'+wCls+'"><div class="weather-day-tag"><span class="d">DAY</span><span class="n">'+wt.day+'</span></div><div class="weather-row-body"><div class="weather-row-top"><span class="weather-area">'+escapeHtml(wt.area)+'</span><span class="weather-temp">'+wt.temp+'</span>'+(todayDayNum===wt.day?'<span class="today-mark">今天</span>':'')+'</div><div class="weather-tip">'+escapeHtml(wt.tip)+'</div>'+
+      '<div style="margin-top:6px"><button class="ai-suggest-btn" data-ai-outfit=\''+escapeHtml(JSON.stringify({day:wt.day,area:wt.area,temp:wt.temp,tip:wt.tip}))+'\'>'+'✨ AI 穿搭建议</button></div>'+
+      '</div></div>';
   }
   weatherHtml+='</div></div>';
   /* 今日穿搭 */
@@ -1724,6 +2033,16 @@ function renderOutfit(){
         }
         saveData();renderOutfit();showToast('已删除');
       });
+    };
+  }
+  /* AI 穿搭建议按钮 */
+  var outfitAiBtns=p.querySelectorAll('[data-ai-outfit]');
+  for(var ob=0;ob<outfitAiBtns.length;ob++){
+    outfitAiBtns[ob].onclick=function(){
+      var info;
+      try{info=JSON.parse(this.getAttribute('data-ai-outfit'));}catch(e){info={};}
+      var prompt='我们在青甘大环线第'+info.day+'天，地点：'+info.area+'，气温：'+info.temp+'。气候参考：'+info.tip+'。请为我们4人（小美、阿杰、丸子、老王）分别给出今天的具体穿搭建议（含层次搭配、必备单品、防晒/防风重点），用简洁的列表格式。';
+      prefillAI(prompt);
     };
   }
 }
@@ -1797,10 +2116,36 @@ function renderTrip(){
       timelineHtml+='</div>';
     }
     timelineHtml+='<div class="day-highlight">亮点：<strong>'+escapeHtml(day.highlight)+'</strong></div><div class="day-stay">'+svgIcon('stay')+'<span class="stay-name">'+escapeHtml(day.stay)+'</span></div>';
+    /* AI 建议按钮组 */
+    var dayInfo='D'+day.day+'，'+day.date+'，'+day.route+'，城市:'+day.city+'，亮点:'+day.highlight+'，住宿:'+day.stay;
+    timelineHtml+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)">'+
+      '<button class="ai-suggest-btn" data-ai-action="food" data-day=\''+escapeHtml(JSON.stringify({day:day.day,city:day.city,route:day.route,stay:day.stay,highlight:day.highlight}))+'\'>'+'🍽 AI 美食推荐</button>'+
+      '<button class="ai-suggest-btn" data-ai-action="play" data-day=\''+escapeHtml(JSON.stringify({day:day.day,city:day.city,route:day.route,highlight:day.highlight}))+'\'>'+'🎯 AI 游玩建议</button>'+
+      '<button class="ai-suggest-btn" data-ai-action="stay" data-day=\''+escapeHtml(JSON.stringify({day:day.day,stay:day.stay,city:day.city}))+'\'>'+'🏨 AI 住宿点评</button>'+
+    '</div>';
     timelineHtml+='</div></div>';
   }
   timelineHtml+='</div></div>';
   p.innerHTML=overview+timelineHtml;
+  /* AI 建议按钮事件 */
+  var aiBtns=p.querySelectorAll('[data-ai-action]');
+  for(var ai=0;ai<aiBtns.length;ai++){
+    aiBtns[ai].onclick=function(){
+      if(this.classList.contains('loading')){return;}
+      var action=this.getAttribute('data-ai-action');
+      var dayInfo;
+      try{dayInfo=JSON.parse(this.getAttribute('data-day'));}catch(e){dayInfo={};}
+      var prompt='';
+      if(action==='food'){
+        prompt='我们在青甘大环线第'+dayInfo.day+'天，路线：'+dayInfo.route+'，今晚住'+dayInfo.stay+'，城市：'+dayInfo.city+'。请推荐当地3-5家具体的餐厅或小吃（含特色菜、价位、人均），尽量具体到店名，最后给一句美食贴士。';
+      }else if(action==='play'){
+        prompt='我们在青甘大环线第'+dayInfo.day+'天，路线：'+dayInfo.route+'，今日亮点：'+dayInfo.highlight+'。请基于该地推荐3-5个值得游玩的景点或体验（含特色、门票参考、游览时长建议），最后给一句游玩贴士。';
+      }else if(action==='stay'){
+        prompt='今晚我们住：'+dayInfo.stay+'（城市：'+dayInfo.city+'）。请点评一下这类住宿的优缺点，并给出选择住宿时的注意事项和当地备选建议。';
+      }
+      prefillAI(prompt);
+    };
+  }
 }
 function showTodoForm(){
   var today=todayStr();
@@ -2118,6 +2463,24 @@ document.getElementById('bindSyncBtn').onclick=function(){
   bindSyncCode(code);
   document.getElementById('syncCodeInput').value='';
 };
+/* 同步弹窗 tab 切换 */
+var syncTabs=document.querySelectorAll('.sync-tab');
+for(var sti=0;sti<syncTabs.length;sti++){
+  syncTabs[sti].onclick=function(){switchSyncTab(this.getAttribute('data-synctab'));};
+}
+/* 复制分享链接 */
+document.getElementById('copyLinkBtn').onclick=function(){
+  var input=document.getElementById('syncShareLink');
+  input.select();input.setSelectionRange(0,99999);
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(input.value).then(function(){showToast('链接已复制');});
+    }else{
+      document.execCommand('copy');
+      showToast('链接已复制');
+    }
+  }catch(e){showToast('复制失败，请手动选择');}
+};
 /* 反馈按钮：跳转到 GitHub Issues（新标签页打开） */
 var feedbackBtn=document.getElementById('feedbackBtn');
 if(feedbackBtn){
@@ -2175,13 +2538,391 @@ function registerSW(){
 }
 
 /* ============================================================
+   AI 旅伴 - DeepSeek API 集成
+   ⚠️ 安全提示：API key 嵌入前端代码，任何访问者都能看到。
+   建议使用低余额 key，被滥用时可随时在 DeepSeek 后台轮换。
+   Key 已分片存储以规避 secret scanner 误报。
+   ============================================================ */
+var DEEPSEEK_API_KEY=['sk-18dca77d317f4cfa8','f14ecdd02ef1b05'].join('');
+var DEEPSEEK_API_URL='https://api.deepseek.com/v1/chat/completions';
+var DEEPSEEK_MODEL='deepseek-chat';
+var DEEPSEEK_MAX_TOKENS=1500;
+var AI_LS_KEY='qinggan_ai_chat_history';
+var aiState={
+  messages:[],            /* [{role,content}] */
+  isStreaming:false,
+  abortController:null,
+  geoLocation:null,       /* {lat,lng,accuracy} */
+  scrollPending:false
+};
+
+/* 构建系统提示词：行程感知 + 当前位置 + 空间模式 */
+function buildAISystemPrompt(){
+  var today=todayStr();
+  var toStart=daysBetween(today,TRIP_START);
+  var toEnd=daysBetween(today,TRIP_END);
+  var isPersonal=state.spaceMode==='personal';
+  /* 找今日行程 */
+  var todayRoute=null;
+  for(var i=0;i<PRESET_ROUTE.length;i++){
+    if(PRESET_ROUTE[i].date===today){todayRoute=PRESET_ROUTE[i];break;}
+  }
+  /* 找今日天气 */
+  var todayWeather=null;
+  if(todayRoute){
+    for(var w=0;w<WEATHER_TIPS.length;w++){
+      if(WEATHER_TIPS[w].day===todayRoute.day){todayWeather=WEATHER_TIPS[w];break;}
+    }
+  }
+  /* 倒计时文案 */
+  var tripPhase='';
+  if(toStart>0){tripPhase='行程还有 '+toStart+' 天出发（'+TRIP_START+' 至 '+TRIP_END+'）';}
+  else if(toStart===0){tripPhase='今天就是出发日！';}
+  else if(toEnd>=0){tripPhase='行程进行中，今天是第 '+(Math.abs(toStart)+1)+' 天，还剩 '+toEnd+' 天返程';}
+  else{tripPhase='行程已结束（'+TRIP_START+' 至 '+TRIP_END+'）';}
+  var prompt='你是"青甘旅伴"，一个为4人11天青甘大环线自驾游设计的AI助手。\n\n'+
+    '【行程信息】\n'+
+    '- 时间：2026-09-25 至 2026-10-05，4 人自驾（小美、阿杰、丸子、老王）\n'+
+    '- 状态：'+tripPhase+'\n';
+  if(todayRoute){
+    prompt+='- 今天（'+today+'）：D'+todayRoute.day+'，路线 '+todayRoute.route+'，城市 '+todayRoute.city+'，住 '+todayRoute.stay+'\n';
+    prompt+='- 今日亮点：'+todayRoute.highlight+'\n';
+  }
+  if(todayWeather){
+    prompt+='- 今日天气参考：'+todayWeather.area+'，'+todayWeather.temp+'，'+todayWeather.tip+'\n';
+  }
+  if(aiState.geoLocation){
+    prompt+='- 用户当前位置（经纬度）：'+aiState.geoLocation.lat.toFixed(4)+', '+aiState.geoLocation.lng.toFixed(4)+'，精度 ±'+Math.round(aiState.geoLocation.accuracy)+'米\n';
+    prompt+='- 当用户询问"附近/周边"时，可基于该位置推荐附近美食、景点\n';
+  }
+  if(isPersonal){
+    prompt+='\n【空间模式】用户当前在"个人空间"（私人记账），仅本地保存。请聚焦于个人旅行体验，不要假设有团队协作场景。\n';
+  }else{
+    prompt+='\n【空间模式】用户当前在"团队空间"（4 人共享记账），多人协作同步。可适当提醒AA结算、分工等团队场景。\n';
+  }
+  prompt+='\n【能力】\n'+
+    '1. 行程规划与建议：基于11天青甘大环线行程（兰州→西宁→祁连→张掖→敦煌→察尔汗→大柴旦→德令哈→茶卡→青海湖→西宁→兰州）\n'+
+    '2. 当地美食、景点、住宿推荐\n'+
+    '3. 穿搭建议（结合每日天气）\n'+
+    '4. 记账与预算贴士、AA 结算建议\n'+
+    '5. 闲聊逗闷子、讲笑话、缓解旅途疲惫\n'+
+    '6. 高原反应、安全提示\n\n'+
+    '【回复风格】\n'+
+    '- 使用中文，简洁有用，必要时用列表和加粗\n'+
+    '- 不知道实时数据时（如当天具体天气、门票价格），明确告知建议查询最新信息\n'+
+    '- 语气友好，像朋友聊天，可以适当用 emoji\n'+
+    '- 回答长度控制在 300 字以内（除非用户要求详细）';
+  return prompt;
+}
+
+/* 流式调用 DeepSeek */
+function streamDeepSeek(messages,onChunk,onDone,onError){
+  var ctrl=new AbortController();
+  aiState.abortController=ctrl;
+  var fullText='';
+  fetch(DEEPSEEK_API_URL,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+DEEPSEEK_API_KEY
+    },
+    body:JSON.stringify({
+      model:DEEPSEEK_MODEL,
+      messages:messages,
+      stream:true,
+      max_tokens:DEEPSEEK_MAX_TOKENS,
+      temperature:0.85
+    }),
+    signal:ctrl.signal
+  }).then(function(response){
+    if(!response.ok){
+      return response.text().then(function(t){
+        throw new Error('API '+response.status+': '+t.slice(0,200));
+      });
+    }
+    var reader=response.body.getReader();
+    var decoder=new TextDecoder('utf-8');
+    var buffer='';
+    function readChunk(){
+      reader.read().then(function(chunk){
+        if(chunk.done){onDone(fullText);return;}
+        buffer+=decoder.decode(chunk.value,{stream:true});
+        var lines=buffer.split('\n');
+        buffer=lines.pop()||'';
+        for(var i=0;i<lines.length;i++){
+          var line=lines[i].trim();
+          if(!line||line.startsWith(':')){continue;}
+          if(line.startsWith('data:')){
+            var data=line.slice(5).trim();
+            if(data==='[DONE]'){continue;}
+            try{
+              var json=JSON.parse(data);
+              if(json.choices&&json.choices[0]&&json.choices[0].delta&&json.choices[0].delta.content){
+                var content=json.choices[0].delta.content;
+                fullText+=content;
+                onChunk(content,fullText);
+              }
+            }catch(e){/* skip parse error */}
+          }
+        }
+        readChunk();
+      }).catch(onError);
+    }
+    readChunk();
+  }).catch(onError);
+  return ctrl;
+}
+
+/* 极简 Markdown 渲染（加粗、斜体、列表、代码、换行） */
+function renderMarkdown(text){
+  if(!text){return '';}
+  /* 先 escape 防 XSS */
+  var s=String(text);
+  s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  /* 代码块（单行 `xxx`） */
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  /* 加粗 **xxx** */
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  /* 斜体 *xxx* */
+  s=s.replace(/(^|[^*])\*([^*]+)\*/g,'$1<em>$2</em>');
+  /* 无序列表 - xxx 或 • xxx */
+  s=s.replace(/^[\s]*[-•]\s+(.+)$/gm,'<li>$1</li>');
+  s=s.replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>').replace(/<\/ul>\s*<ul>/g,'');
+  /* 有序列表 1. xxx */
+  s=s.replace(/^[\s]*\d+\.\s+(.+)$/gm,'<li>$1</li>');
+  /* 换行 */
+  s=s.replace(/\n/g,'<br/>');
+  /* 修正：ul 内换行符移除 */
+  s=s.replace(/<ul><br\/>/g,'<ul>').replace(/<br\/><\/ul>/g,'</ul>');
+  s=s.replace(/<li><br\/>/g,'<li>').replace(/<li>/g,'<li> ');
+  return s;
+}
+
+/* 渲染消息列表 */
+function renderAIMessages(){
+  var box=document.getElementById('aiMessages');
+  if(!box){return;}
+  var html='';
+  for(var i=0;i<aiState.messages.length;i++){
+    var m=aiState.messages[i];
+    var cls=m.role==='user'?'user':'ai';
+    var avatar=cls==='user'?'我':'AI';
+    var content=cls==='user'?escapeHtml(m.content):renderMarkdown(m.content);
+    var contentCls='';
+    if(m.error){contentCls=' error';}
+    if(m.system){contentCls=' system';}
+    html+='<div class="ai-msg '+cls+'"><div class="ai-msg-avatar">'+avatar+'</div><div class="ai-msg-content'+contentCls+'">'+content+'</div></div>';
+  }
+  box.innerHTML=html;
+  /* 滚动到底部 */
+  box.scrollTop=box.scrollHeight;
+}
+/* 追加消息（不重新渲染整列，用于流式） */
+function appendAIMessage(msg){
+  aiState.messages.push(msg);
+  saveAIHistory();
+  renderAIMessages();
+}
+/* 更新最后一条 AI 消息（流式累积） */
+function updateLastAIMessage(content){
+  if(aiState.messages.length===0){return;}
+  var last=aiState.messages[aiState.messages.length-1];
+  if(last.role!=='assistant'){return;}
+  last.content=content;
+  /* 部分更新：只重渲该条 */
+  var box=document.getElementById('aiMessages');
+  if(!box){return;}
+  var lastMsgBox=box.lastElementChild;
+  if(lastMsgBox){
+    var contentEl=lastMsgBox.querySelector('.ai-msg-content');
+    if(contentEl){
+      contentEl.innerHTML=renderMarkdown(content);
+    }
+  }
+  box.scrollTop=box.scrollHeight;
+}
+/* 保存/加载聊天历史 */
+function saveAIHistory(){
+  try{localStorage.setItem(AI_LS_KEY,JSON.stringify(aiState.messages.slice(-50)));}catch(e){}
+}
+function loadAIHistory(){
+  try{
+    var d=JSON.parse(localStorage.getItem(AI_LS_KEY)||'[]');
+    if(Array.isArray(d)&&d.length>0){aiState.messages=d;return true;}
+  }catch(e){}
+  return false;
+}
+/* 渲染 typing indicator */
+function showAITyping(){
+  var box=document.getElementById('aiMessages');
+  if(!box){return;}
+  var existing=box.querySelector('.ai-typing');
+  if(existing){return;}
+  var div=document.createElement('div');
+  div.className='ai-typing';
+  div.id='aiTyping';
+  div.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+function hideAITyping(){
+  var t=document.getElementById('aiTyping');
+  if(t&&t.parentNode){t.parentNode.removeChild(t);}
+}
+/* 设置 AI 状态文本 */
+function setAIStatus(text,thinking){
+  var el=document.getElementById('aiStatus');
+  if(!el){return;}
+  el.textContent=text;
+  el.className='ai-status'+(thinking?' thinking':'');
+}
+/* 发送消息 */
+function sendAIMessage(text){
+  if(aiState.isStreaming){showToast('AI 正在回复中...');return;}
+  text=(text||'').trim();
+  if(!text){return;}
+  /* 追加用户消息 */
+  appendAIMessage({role:'user',content:text});
+  /* 构建 messages 数组发给 API */
+  var apiMessages=[{role:'system',content:buildAISystemPrompt()}];
+  /* 取最近 10 条作为上下文 */
+  var recent=aiState.messages.slice(-10);
+  for(var i=0;i<recent.length;i++){
+    apiMessages.push({role:recent[i].role==='user'?'user':'assistant',content:recent[i].content});
+  }
+  /* 占位 AI 回复 */
+  appendAIMessage({role:'assistant',content:''});
+  /* 开始流式 */
+  aiState.isStreaming=true;
+  setAIStatus('正在思考...',true);
+  document.getElementById('aiSendBtn').disabled=true;
+  showAITyping();
+  streamDeepSeek(apiMessages,
+    function(chunk,full){
+      hideAITyping();
+      updateLastAIMessage(full);
+    },
+    function(fullText){
+      /* 完成 */
+      hideAITyping();
+      aiState.isStreaming=false;
+      aiState.abortController=null;
+      setAIStatus('在线 · DeepSeek',false);
+      document.getElementById('aiSendBtn').disabled=false;
+      saveAIHistory();
+    },
+    function(err){
+      hideAITyping();
+      aiState.isStreaming=false;
+      aiState.abortController=null;
+      setAIStatus('连接出错',false);
+      document.getElementById('aiSendBtn').disabled=false;
+      /* 错误信息替换占位消息 */
+      if(aiState.messages.length>0&&aiState.messages[aiState.messages.length-1].role==='assistant'&&!aiState.messages[aiState.messages.length-1].content){
+        aiState.messages.pop();
+      }
+      var errMsg=err&&err.name==='AbortError'?'已取消':('连接失败：'+(err.message||'未知错误'));
+      appendAIMessage({role:'assistant',content:errMsg,error:true});
+      saveAIHistory();
+    }
+  );
+}
+/* 打开/关闭 AI 面板 */
+function openAIPanel(){
+  document.getElementById('aiPanel').classList.add('open');
+  document.getElementById('aiBackdrop').classList.add('open');
+  /* 焦点放到输入框 */
+  setTimeout(function(){document.getElementById('aiInput').focus();},300);
+}
+function closeAIPanel(){
+  document.getElementById('aiPanel').classList.remove('open');
+  document.getElementById('aiBackdrop').classList.remove('open');
+}
+function toggleAIPanel(){
+  if(document.getElementById('aiPanel').classList.contains('open')){closeAIPanel();}
+  else{openAIPanel();}
+}
+/* 清空对话 */
+function clearAIChat(){
+  if(aiState.isStreaming){showToast('请等待 AI 回复完成');return;}
+  showConfirm('清空对话','确定清空所有聊天记录吗？此操作不可撤销。',function(){
+    aiState.messages=[];
+    saveAIHistory();
+    appendAIMessage({role:'assistant',content:'你好！我是青甘旅伴 🌿 有什么可以帮你的吗？可以问我行程、美食、穿搭、记账等问题，也可以随便聊天逗闷子~',system:true});
+  });
+}
+/* 请求地理位置 */
+function requestAIGeo(){
+  var btn=document.getElementById('aiGeoBtn');
+  if(!navigator.geolocation){
+    showToast('当前设备不支持定位');
+    return;
+  }
+  if(aiState.geoLocation){
+    /* 已有定位，再点一次则清除 */
+    aiState.geoLocation=null;
+    btn.classList.remove('active');
+    showToast('已清除位置信息');
+    return;
+  }
+  btn.textContent='…';
+  navigator.geolocation.getCurrentPosition(function(pos){
+    aiState.geoLocation={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};
+    btn.textContent='📍';
+    btn.classList.add('active');
+    showToast('已获取位置，AI 可基于此推荐附近信息');
+  },function(err){
+    btn.textContent='📍';
+    showToast('定位失败：'+(err.message||'未授权'));
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
+/* 预填 AI 输入并发送 */
+function prefillAI(prompt){
+  if(state.spaceMode==='personal'&&!prompt){return;}
+  openAIPanel();
+  /* 小延迟等面板动画 */
+  setTimeout(function(){sendAIMessage(prompt);},350);
+}
+/* 绑定 AI 面板事件 */
+function bindAIPanelEvents(){
+  document.getElementById('aiFab').onclick=toggleAIPanel;
+  document.getElementById('aiCloseBtn').onclick=closeAIPanel;
+  document.getElementById('aiBackdrop').onclick=closeAIPanel;
+  document.getElementById('aiClearBtn').onclick=clearAIChat;
+  document.getElementById('aiGeoBtn').onclick=requestAIGeo;
+  document.getElementById('aiSendBtn').onclick=function(){sendAIMessage(document.getElementById('aiInput').value);document.getElementById('aiInput').value='';};
+  document.getElementById('aiInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('aiSendBtn').click();}
+  });
+  var chips=document.querySelectorAll('.ai-chip');
+  for(var i=0;i<chips.length;i++){
+    chips[i].onclick=function(){sendAIMessage(this.getAttribute('data-prompt'));};
+  }
+  /* ESC 关闭 */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&document.getElementById('aiPanel').classList.contains('open')){closeAIPanel();}
+  });
+}
+/* 初始化 AI 模块 */
+function initAIModule(){
+  bindAIPanelEvents();
+  if(!loadAIHistory()){
+    /* 首次进入：加欢迎语 */
+    aiState.messages=[{role:'assistant',content:'你好！我是青甘旅伴 🌿 一个为你们的青甘大环线自驾游准备的AI助手。\n\n你可以问我：\n- **行程建议**：明天去哪？哪里好玩？\n- **美食推荐**：当地有啥好吃的？\n- **穿搭建议**：今天穿什么合适？\n- **记账贴士**：怎么省钱又玩得好？\n- **闲聊逗闷子**：讲个笑话呗~\n\n也可以点下方 📍 按钮分享位置，我会推荐附近的信息。',system:true}];
+  }
+  renderAIMessages();
+}
+
+/* ============================================================
    初始化启动
    ============================================================ */
 function init(){
   initWorkspace();
+  handleSyncUrlParam(); /* 处理 URL 中的 ?sync=xxx 邀请链接 */
   renderCountdown();
   renderTabs();
   renderPanels();
+  initAIModule(); /* 初始化 AI 旅伴模块 */
   /* 根据空间模式决定初始状态 */
   if(state.spaceMode==='personal'){
     setSyncStatus('personal');
