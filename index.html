@@ -551,15 +551,152 @@ body.space-personal .ai-send-btn{background:linear-gradient(135deg,#f0a04b,#ffb8
 .ai-suggest-btn.loading{opacity:0.6;cursor:wait;}
 body.space-personal .ai-suggest-btn{border-color:var(--accent);color:#8a5a1a;background:linear-gradient(135deg,#fff,#fff3e0);}
 body.space-personal .ai-suggest-btn:hover{background:#fff3e0;}
+/* ========== 登录 / 注册 全屏页 ========== */
+.auth-screen{
+  position:fixed;inset:0;z-index:400;display:none;
+  background:linear-gradient(160deg,#1a5c58 0%,#2d8b8b 45%,#3aa8a0 100%);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.auth-screen.show{display:block;}
+.auth-wrap{
+  min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 20px calc(32px + var(--safe-bottom));
+}
+.auth-card{
+  background:#fff;border-radius:20px;padding:24px 22px;width:100%;max-width:380px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.18);animation:authIn 0.35s ease;
+}
+@keyframes authIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.auth-logo{text-align:center;margin-bottom:18px;}
+.auth-logo .emoji{font-size:2.4rem;line-height:1;}
+.auth-logo h2{font-size:1.15rem;color:var(--primary-dark);margin-top:6px;font-weight:700;}
+.auth-logo p{font-size:0.76rem;color:var(--text-light);margin-top:3px;}
+.auth-tabs{display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:16px;}
+.auth-tab{
+  flex:1;border:none;background:transparent;color:var(--text-light);font-family:inherit;
+  font-size:0.85rem;padding:9px;border-radius:10px;cursor:pointer;font-weight:500;transition:all 0.2s;
+}
+.auth-tab.active{background:#fff;color:var(--primary-dark);font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.auth-field{margin-bottom:12px;}
+.auth-field label{font-size:0.76rem;color:var(--text-light);margin-bottom:5px;font-weight:500;}
+.auth-field input{
+  width:100%;border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;
+  font-size:16px;font-family:inherit;min-height:46px;background:#fbfdfd;
+}
+.auth-field input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(45,139,139,0.10);}
+.auth-hint{font-size:0.7rem;color:var(--text-light);margin-top:4px;line-height:1.45;}
+.auth-submit{
+  width:100%;border:none;border-radius:12px;padding:13px;font-family:inherit;
+  font-size:0.92rem;font-weight:600;color:#fff;cursor:pointer;margin-top:6px;
+  background:linear-gradient(135deg,#2d8b8b,#3aa8a0);min-height:48px;transition:all 0.2s;
+}
+.auth-submit:active{transform:scale(0.98);}
+.auth-submit:disabled{opacity:0.55;cursor:not-allowed;}
+.auth-msg{
+  font-size:0.78rem;padding:9px 11px;border-radius:10px;margin-bottom:12px;
+  display:none;line-height:1.5;
+}
+.auth-msg.show{display:block;}
+.auth-msg.err{background:#fff5f5;color:var(--danger);border:1px solid #ffd5d5;}
+.auth-msg.ok{background:#f0faf3;color:#2e7d32;border:1px solid #c8e6c9;}
+.auth-msg.info{background:#fff8e7;color:#8a5a1a;border:1px solid #ffe4a3;}
+.auth-foot{text-align:center;margin-top:14px;font-size:0.74rem;color:rgba(255,255,255,0.85);line-height:1.6;}
+.auth-skip{
+  background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;
+  font-family:inherit;font-size:0.78rem;padding:8px 18px;border-radius:20px;
+  cursor:pointer;margin-top:12px;
+}
+.auth-skip:active{background:rgba(255,255,255,0.15);}
+/* ========== 空间选择 / 加入团队 ========== */
+.ws-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.ws-item{
+  display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;
+  border:1.5px solid var(--border);background:#fbfdfd;cursor:pointer;
+  font-family:inherit;text-align:left;width:100%;transition:all 0.2s;
+}
+.ws-item:active{transform:scale(0.99);}
+.ws-item.current{border-color:var(--primary);background:var(--primary-bg);}
+.ws-item-icon{
+  width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;font-size:1.1rem;
+  background:var(--primary-bg);color:var(--primary-dark);
+}
+.ws-item.kind-personal .ws-item-icon{background:#fff3e0;color:#8a5a1a;}
+.ws-item-body{flex:1;min-width:0;}
+.ws-item-name{font-size:0.88rem;font-weight:600;color:var(--text);}
+.ws-item-meta{font-size:0.7rem;color:var(--text-light);margin-top:1px;}
+.ws-item-code{
+  font-family:monospace;font-size:0.72rem;background:var(--primary-bg);
+  color:var(--primary-dark);padding:2px 7px;border-radius:6px;flex-shrink:0;font-weight:600;
+}
+.ws-divider{height:1px;background:var(--border);margin:14px 0;}
+.invite-code-big{
+  font-family:monospace;font-size:1.6rem;font-weight:800;letter-spacing:5px;
+  text-align:center;color:var(--primary-dark);background:var(--primary-bg);
+  border-radius:12px;padding:14px;margin:10px 0;border:2px dashed var(--primary-light);
+}
+/* ========== 用户徽章（同步条） ========== */
+.user-badge{
+  display:flex;align-items:center;gap:5px;border:1px solid var(--border);
+  background:var(--card);border-radius:14px;padding:3px 9px 3px 4px;
+  font-size:0.72rem;color:var(--text);cursor:pointer;font-family:inherit;
+}
+.user-badge:active{background:var(--primary-bg);}
+.user-badge .ub-avatar{
+  width:20px;height:20px;border-radius:50%;background:var(--primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;
+}
+body.space-personal .user-badge .ub-avatar{background:var(--accent);}
+.user-badge .ub-name{max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 </head>
 <body>
+<!-- ========== 登录 / 注册 全屏页 ========== -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="emoji">🏔️</div>
+        <h2>青甘大环线 · 旅行记账台</h2>
+        <p>登录后数据自动云端同步，换手机也不丢</p>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-authtab="login">登录</button>
+        <button class="auth-tab" data-authtab="signup">注册</button>
+      </div>
+      <div class="auth-msg" id="authMsg"></div>
+      <div class="auth-field" id="authNickField" style="display:none">
+        <label>你的昵称</label>
+        <input type="text" id="authNick" placeholder="例如：老王" autocomplete="nickname" />
+      </div>
+      <div class="auth-field">
+        <label>邮箱</label>
+        <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email" autocapitalize="off" spellcheck="false" />
+      </div>
+      <div class="auth-field">
+        <label>密码</label>
+        <input type="password" id="authPassword" placeholder="至少 6 位" autocomplete="current-password" />
+        <div class="auth-hint" id="authPwHint">忘记密码？换个邮箱重新注册也行，数据靠邀请码找回。</div>
+      </div>
+      <button class="auth-submit" id="authSubmit">登录</button>
+    </div>
+    <div class="auth-foot">
+      邮箱不会收到任何验证邮件，注册完直接就能用<br/>
+      数据存在你自己的 Supabase 云端 · 只有你和队友能看
+    </div>
+    <button class="auth-skip" id="authSkip">先不登录，本地试用 →</button>
+  </div>
+</div>
 <!-- 同步状态条 -->
 <div class="sync-bar" id="syncBar">
   <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncText">连接中...</span></div>
   <div class="sync-actions">
     <button class="sync-btn" id="retryBtn" style="display:none">重试</button>
-    <button class="sync-btn" id="syncCodeBtn">同步码</button>
+    <button class="user-badge" id="userBadge" style="display:none">
+      <span class="ub-avatar" id="ubAvatar">?</span>
+      <span class="ub-name" id="ubName">未登录</span>
+    </button>
+    <button class="sync-btn" id="syncCodeBtn">团队</button>
   </div>
 </div>
 <!-- 告警横幅 -->
@@ -591,44 +728,47 @@ body.space-personal .ai-suggest-btn:hover{background:#fff3e0;}
 <div class="tabs" id="tabBar"></div>
 <!-- 主容器 -->
 <div class="container" id="mainContainer"></div>
-<!-- 弹窗：同步码 -->
+<!-- 弹窗：空间管理（团队 / 个人 / 邀请） -->
 <div class="modal-overlay" id="syncModal">
   <div class="modal" style="max-width:440px">
-    <div class="modal-title">同步与邀请 · 团队数据共享</div>
+    <div class="modal-title" id="wsModalTitle">我的空间</div>
     <div class="modal-body">
-      <div class="sync-url-banner" id="syncUrlBanner" style="display:none">
-        🎉 检测到邀请链接，点击「绑定」即可加入该团队数据。
-      </div>
-      <div class="sync-tabs">
-        <button class="sync-tab active" data-synctab="qr">扫码邀请</button>
-        <button class="sync-tab" data-synctab="link">分享链接</button>
-        <button class="sync-tab" data-synctab="code">同步码</button>
-      </div>
-      <!-- 扫码邀请 -->
-      <div class="sync-tab-content active" data-synctab="qr">
-        <div class="sync-qr-wrap">
-          <img class="sync-qr-img" id="syncQrImg" alt="同步二维码" />
-          <div class="sync-qr-hint">让同伴用微信/相机扫一扫<br/>即可一键加入同一团队数据</div>
+      <div class="auth-msg" id="wsMsg"></div>
+      <div id="wsGuestBox" style="display:none">
+        <div class="auth-msg info show" style="margin-bottom:14px">
+          当前是<strong>本地试用模式</strong>，数据只存在这台设备上。<br/>
+          登录后即可多设备同步、邀请队友一起记账。
         </div>
+        <button class="btn btn-primary btn-block" id="wsGoLoginBtn">登录 / 注册</button>
       </div>
-      <!-- 分享链接 -->
-      <div class="sync-tab-content" data-synctab="link">
-        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:6px;">复制下方链接发给同伴，打开即自动绑定：</div>
-        <div class="sync-share-link">
-          <input type="text" id="syncShareLink" readonly />
-          <button class="btn btn-primary btn-sm" id="copyLinkBtn">复制</button>
+      <div id="wsUserBox" style="display:none">
+        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">点击切换当前空间：</div>
+        <div class="ws-list" id="wsList"></div>
+        <div class="ws-divider"></div>
+        <div id="wsInviteBox">
+          <div style="font-size:0.82rem;font-weight:600;color:var(--primary-dark);margin-bottom:8px;">邀请队友加入团队</div>
+          <div class="invite-code-big" id="wsInviteCode">------</div>
+          <div style="font-size:0.74rem;color:var(--text-light);text-align:center;line-height:1.5;margin-bottom:10px;">
+            把这个 6 位邀请码发给队友<br/>他们注册后输入即可加入
+          </div>
+          <div class="sync-share-link">
+            <input type="text" id="wsShareLink" readonly />
+            <button class="btn btn-primary btn-sm" id="wsCopyLinkBtn">复制</button>
+          </div>
+          <div class="sync-qr-wrap" style="padding-top:12px">
+            <img class="sync-qr-img" id="wsQrImg" alt="邀请二维码" />
+            <div class="sync-qr-hint">队友扫码 → 注册 → 自动加入</div>
+          </div>
+          <div class="ws-divider"></div>
         </div>
-        <div style="font-size:0.72rem;color:var(--text-light);margin-top:8px;line-height:1.5;">💡 链接含同步码，打开后会自动提示绑定。仅团队空间可用。</div>
-      </div>
-      <!-- 同步码 -->
-      <div class="sync-tab-content" data-synctab="code">
-        <p style="font-size:0.8rem;margin-bottom:8px;">手动输入同步码绑定（兼容老版本）：</p>
-        <div style="font-size:0.78rem;font-weight:600;color:var(--text-light);margin-bottom:4px;">本机同步码：</div>
-        <div class="sync-code-display" id="syncCodeDisplay">加载中...</div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--primary-dark);margin-bottom:8px;">用邀请码加入别人的团队</div>
         <div class="sync-code-input">
-          <input type="text" id="syncCodeInput" placeholder="输入同伴的同步码">
-          <button class="btn btn-primary btn-sm" id="bindSyncBtn">绑定</button>
+          <input type="text" id="wsJoinInput" placeholder="输入 6 位邀请码" maxlength="8" style="text-transform:uppercase" />
+          <button class="btn btn-primary btn-sm" id="wsJoinBtn">加入</button>
         </div>
+        <div class="ws-divider"></div>
+        <button class="btn btn-outline btn-block btn-sm" id="wsNewTeamBtn" style="margin-bottom:8px">＋ 新建一个团队</button>
+        <button class="btn btn-outline btn-block btn-sm" id="wsLogoutBtn">退出登录</button>
       </div>
     </div>
     <div class="modal-actions"><button class="btn btn-outline btn-sm" id="closeSyncModal">关闭</button></div>
@@ -742,7 +882,8 @@ var state={
   teamData:null,
   personalData:null,
   syncStatus:'connecting',writeTimer:null,pollTimer:null,isOnline:navigator.onLine,
-  pendingWrites:false,lastRemoteData:null,lastSyncTime:0
+  pendingWrites:false,lastRemoteData:null,lastSyncTime:0,
+  rtPullTimer:null,pendingJoinCode:null,dirtyTypes:{},bootDone:false
 };
 /* ========== 工具函数 ========== */
 function genId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).substr(2,6);}
@@ -841,25 +982,810 @@ function httpPost(url,params,cb){
   xhr.send(parts.join('&'));
 }
 
-/* 远程读取 */
+/* 远程读取（Supabase records 表） */
 function remoteRead(cb){
-  httpGet(API_BASE+'/'+state.workspaceId,function(err,text){
+  if(!auth.session||!auth.currentWs){cb(new Error('未登录'),null);return;}
+  var isPersonal=auth.currentWs.kind==='personal';
+  sbPull(auth.currentWs.id,function(err,rows){
     if(err){cb(err,null);return;}
-    if(!text||text.trim()===''){cb(null,null);return;}
-    try{var d=JSON.parse(text);cb(null,d);}
-    catch(e){cb(new Error('parse error: '+e.message),null);}
+    if(!rows||!rows.length){cb(null,null);return;}
+    var d=recordsToData(rows,isPersonal);
+    if(d.__empty&&!d._meta){cb(null,null);return;}
+    delete d.__empty;
+    cb(null,d);
   });
 }
-/* 远程写入 */
+/* 远程写入（Supabase push_records RPC） */
 function remoteWrite(data,cb){
-  var str=JSON.stringify(data);
-  httpPost(API_BASE+'/update',{key:state.workspaceId,value:str},function(err,text){
+  if(!auth.session||!auth.currentWs){cb(new Error('未登录'));return;}
+  var ws=auth.currentWs;
+  /* 空间名走 workspaces 表（renameWorkspace），不写进 records.meta，
+     避免过期副本覆盖真实名字 */
+  if(data._meta&&data._meta.teamName){delete data._meta.teamName;}
+  sbPush(ws.id,data,function(err){
     if(err){cb(err);return;}
-    try{
-      var r=JSON.parse(text);
-      if(r.status===1){cb(null);setLSCache(data);state.lastSyncTime=Date.now();}
-      else{cb(new Error('write failed: '+(r.msg||'unknown')));}
-    }catch(e){cb(new Error('parse error: '+e.message));}
+    setLSCache(data,ws.kind==='personal'?'personal':'team');
+    state.lastSyncTime=Date.now();
+    cb(null);
+  });
+}
+
+/* ============================================================
+   Supabase 后端模块 v4
+   真实账号鉴权 + 团队共享空间 + 私密个人空间 + Realtime 实时同步
+   ============================================================ */
+var SB_URL='https://cxvwynfwoppyzjopzpkz.supabase.co';
+var SB_ANON='sb_publishable_tL1-YiaZ0AJcVCpqCt5d8A_p91RFmYJ';
+var SB_SESSION_KEY='qinggan_sb_session';
+var SB_WS_KEY='qinggan_sb_current_ws';
+/* 数据类型 <-> records.kind 映射 */
+var KIND_MAP={prepItems:'prepItem',prepaid:'prepaid',expenses:'expense',
+              outfits:'outfit',todos:'todo',prepTodos:'prepTodo',members:'member'};
+var KIND_REVERSE={};
+(function(){for(var k in KIND_MAP){if(KIND_MAP.hasOwnProperty(k)){KIND_REVERSE[KIND_MAP[k]]=k;}}})();
+var DATA_TYPES=['prepItems','prepaid','expenses','outfits','todos','members','prepTodos'];
+
+var auth={
+  session:null,        /* {access_token, refresh_token, expires_at, user:{id,email}} */
+  profile:null,        /* {id, nickname} */
+  workspaces:[],       /* my_workspaces() 结果 */
+  currentWs:null,      /* 当前激活的 workspace 对象 */
+  teamWs:null,         /* 团队空间（最近使用的） */
+  personalWs:null,     /* 个人空间 */
+  guestMode:false,     /* 未登录本地试用 */
+  wsMembers:[],        /* 当前空间成员 */
+  rtChannel:null,      /* Realtime WebSocket */
+  rtRef:0
+};
+
+/* ---------- 会话持久化 ---------- */
+function saveSession(s){
+  try{
+    if(s){localStorage.setItem(SB_SESSION_KEY,JSON.stringify(s));}
+    else{localStorage.removeItem(SB_SESSION_KEY);}
+  }catch(e){}
+}
+function loadSession(){
+  try{return JSON.parse(localStorage.getItem(SB_SESSION_KEY)||'null');}catch(e){return null;}
+}
+function saveCurrentWsId(id){
+  try{
+    if(id){localStorage.setItem(SB_WS_KEY,id);}
+    else{localStorage.removeItem(SB_WS_KEY);}
+  }catch(e){}
+}
+function loadCurrentWsId(){try{return localStorage.getItem(SB_WS_KEY);}catch(e){return null;}}
+
+/* ---------- 通用 HTTP（JSON，带鉴权） ---------- */
+function sbRequest(path,opts,cb){
+  opts=opts||{};
+  var xhr=new XMLHttpRequest();
+  xhr.open(opts.method||'GET',SB_URL+path,true);
+  xhr.timeout=opts.timeout||20000;
+  xhr.setRequestHeader('apikey',SB_ANON);
+  var tok=(auth.session&&auth.session.access_token)?auth.session.access_token:SB_ANON;
+  if(opts.noAuth){tok=SB_ANON;}
+  xhr.setRequestHeader('Authorization','Bearer '+tok);
+  xhr.setRequestHeader('Content-Type','application/json');
+  if(opts.prefer){xhr.setRequestHeader('Prefer',opts.prefer);}
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4){return;}
+    var body=null;
+    if(xhr.responseText&&xhr.responseText.trim()!==''){
+      try{body=JSON.parse(xhr.responseText);}catch(e){body=xhr.responseText;}
+    }
+    if(xhr.status>=200&&xhr.status<300){cb(null,body,xhr.status);}
+    else{
+      var msg=(body&&(body.message||body.error_description||body.msg||body.error))||('HTTP '+xhr.status);
+      var err=new Error(msg);err.status=xhr.status;err.body=body;
+      cb(err,body,xhr.status);
+    }
+  };
+  xhr.ontimeout=function(){cb(new Error('请求超时，请检查网络'));};
+  xhr.onerror=function(){cb(new Error('网络错误，请检查网络连接'));};
+  xhr.send(opts.body?JSON.stringify(opts.body):null);
+}
+/* 带 token 自动刷新的请求 */
+function sbAuthed(path,opts,cb){
+  if(auth.session&&auth.session.expires_at&&
+     (auth.session.expires_at*1000-Date.now())<60000&&auth.session.refresh_token){
+    refreshToken(function(){sbRequest(path,opts,cb);});
+    return;
+  }
+  sbRequest(path,opts,function(err,body,status){
+    if(err&&status===401&&auth.session&&auth.session.refresh_token){
+      refreshToken(function(rerr){
+        if(rerr){cb(err,body,status);return;}
+        sbRequest(path,opts,cb);
+      });
+      return;
+    }
+    cb(err,body,status);
+  });
+}
+function rpc(fn,args,cb){sbAuthed('/rest/v1/rpc/'+fn,{method:'POST',body:args||{}},cb);}
+
+/* ---------- 认证 ---------- */
+function refreshToken(cb){
+  var rt=auth.session&&auth.session.refresh_token;
+  if(!rt){cb(new Error('no refresh token'));return;}
+  sbRequest('/auth/v1/token?grant_type=refresh_token',
+    {method:'POST',body:{refresh_token:rt},noAuth:true},
+    function(err,body){
+      if(err||!body||!body.access_token){
+        auth.session=null;saveSession(null);cb(err||new Error('refresh failed'));return;
+      }
+      auth.session=body;saveSession(body);cb(null);
+    });
+}
+function signUp(email,password,nickname,cb){
+  sbRequest('/auth/v1/signup',
+    {method:'POST',noAuth:true,body:{email:email,password:password,data:{nickname:nickname||''}}},
+    function(err,body){
+      if(err){cb(err);return;}
+      /* 免验证模式下 signup 直接返回 session */
+      if(body&&body.access_token){auth.session=body;saveSession(body);cb(null,body);return;}
+      /* 兜底：立刻用密码登录一次 */
+      signIn(email,password,cb);
+    });
+}
+function signIn(email,password,cb){
+  sbRequest('/auth/v1/token?grant_type=password',
+    {method:'POST',noAuth:true,body:{email:email,password:password}},
+    function(err,body){
+      if(err){cb(err);return;}
+      if(!body||!body.access_token){cb(new Error('登录失败，请重试'));return;}
+      auth.session=body;saveSession(body);cb(null,body);
+    });
+}
+function signOut(cb){
+  var done=function(){
+    stopRealtime();
+    auth.session=null;auth.profile=null;auth.workspaces=[];
+    auth.currentWs=null;auth.teamWs=null;auth.personalWs=null;auth.wsMembers=[];
+    saveSession(null);saveCurrentWsId(null);
+    if(cb)cb();
+  };
+  if(!auth.session){done();return;}
+  sbRequest('/auth/v1/logout',{method:'POST'},function(){done();});
+}
+function currentUserId(){
+  return (auth.session&&auth.session.user&&auth.session.user.id)||null;
+}
+function currentNickname(){
+  if(auth.profile&&auth.profile.nickname){return auth.profile.nickname;}
+  var u=auth.session&&auth.session.user;
+  if(u&&u.user_metadata&&u.user_metadata.nickname){return u.user_metadata.nickname;}
+  if(u&&u.email){return u.email.split('@')[0];}
+  return '旅行者';
+}
+
+/* ---------- 用户资料 ---------- */
+function loadProfile(cb){
+  var uid=currentUserId();
+  if(!uid){cb(new Error('not logged in'));return;}
+  sbAuthed('/rest/v1/profiles?id=eq.'+uid+'&select=*',{},function(err,body){
+    if(err){cb(err);return;}
+    auth.profile=(body&&body.length)?body[0]:null;
+    cb(null,auth.profile);
+  });
+}
+function updateNickname(nick,cb){
+  var uid=currentUserId();
+  if(!uid){cb&&cb(new Error('not logged in'));return;}
+  sbAuthed('/rest/v1/profiles?id=eq.'+uid,
+    {method:'PATCH',body:{nickname:nick},prefer:'return=representation'},
+    function(err,body){
+      if(!err&&body&&body.length){auth.profile=body[0];}
+      cb&&cb(err,body);
+    });
+}
+
+/* ---------- 空间管理 ---------- */
+function loadWorkspaces(cb){
+  rpc('my_workspaces',{},function(err,body){
+    if(err){cb(err);return;}
+    auth.workspaces=body||[];
+    auth.teamWs=null;auth.personalWs=null;
+    for(var i=0;i<auth.workspaces.length;i++){
+      var w=auth.workspaces[i];
+      if(w.kind==='personal'&&!auth.personalWs){auth.personalWs=w;}
+      if(w.kind==='team'&&!auth.teamWs){auth.teamWs=w;}
+    }
+    cb(null,auth.workspaces);
+  });
+}
+function createWorkspace(name,kind,cb){
+  rpc('create_workspace',{p_name:name,p_kind:kind},function(err,body){
+    if(err){cb(err);return;}
+    var ws=Array.isArray(body)?body[0]:body;
+    cb(null,ws);
+  });
+}
+function joinWorkspace(code,cb){
+  rpc('join_workspace',{p_code:String(code||'').toUpperCase().trim()},function(err,body){
+    if(err){cb(err);return;}
+    var ws=Array.isArray(body)?body[0]:body;
+    cb(null,ws);
+  });
+}
+function loadWsMembers(wsId,cb){
+  rpc('ws_members',{p_ws:wsId},function(err,body){
+    if(!err){auth.wsMembers=body||[];}
+    cb&&cb(err,body);
+  });
+}
+/* 确保用户至少有一个团队空间和一个个人空间 */
+function ensureWorkspaces(cb){
+  loadWorkspaces(function(err){
+    if(err){cb(err);return;}
+    var need=[];
+    if(!auth.teamWs){need.push(['青甘四人组','team']);}
+    if(!auth.personalWs){need.push(['我的个人空间','personal']);}
+    if(!need.length){cb(null);return;}
+    var i=0;
+    var next=function(){
+      if(i>=need.length){loadWorkspaces(function(e){cb(e||null);});return;}
+      var item=need[i++];
+      createWorkspace(item[0],item[1],function(e){
+        if(e){cb(e);return;}
+        next();
+      });
+    };
+    next();
+  });
+}
+
+/* ---------- 数据读写：records 表 <-> state.data ---------- */
+/* state.data 转 records 数组 */
+function dataToRecords(data){
+  var out=[];
+  for(var t=0;t<DATA_TYPES.length;t++){
+    var type=DATA_TYPES[t],kind=KIND_MAP[type],arr=data[type]||[];
+    for(var i=0;i<arr.length;i++){
+      var it=arr[i];
+      if(!it||!it.id){continue;}
+      var payload={};
+      for(var k in it){
+        if(it.hasOwnProperty(k)&&k!=='_ts'&&k!=='_deleted'){payload[k]=it[k];}
+      }
+      out.push({id:kind+':'+it.id,kind:kind,payload:payload,
+                ts:it._ts||Date.now(),deleted:!!it._deleted});
+    }
+  }
+  /* 空间元数据（团队名等） */
+  if(data._meta){
+    out.push({id:'meta:main',kind:'meta',payload:data._meta,
+              ts:data._metaTs||Date.now(),deleted:false});
+  }
+  return out;
+}
+/* records 数组转 state.data */
+function recordsToData(rows,isPersonal){
+  var d={prepItems:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]};
+  var hasAny=false;
+  for(var i=0;i<(rows||[]).length;i++){
+    var r=rows[i];
+    if(!r||!r.kind){continue;}
+    if(r.kind==='meta'){
+      d._meta=r.payload||{};d._metaTs=r.ts||0;continue;
+    }
+    var type=KIND_REVERSE[r.kind];
+    if(!type){continue;}
+    hasAny=true;
+    var it=r.payload||{};
+    var obj={};
+    for(var k in it){if(it.hasOwnProperty(k)){obj[k]=it[k];}}
+    /* id 去掉 kind 前缀 */
+    var rawId=String(r.id||'');
+    var colon=rawId.indexOf(':');
+    obj.id=(colon>=0)?rawId.slice(colon+1):rawId;
+    obj._ts=r.ts||0;
+    if(r.deleted){obj._deleted=true;}
+    d[type].push(obj);
+  }
+  d.__empty=!hasAny;
+  return d;
+}
+/* 从云端拉取整个空间的数据 */
+function sbPull(wsId,cb){
+  sbAuthed('/rest/v1/records?workspace_id=eq.'+wsId+'&select=id,kind,payload,ts,deleted&order=ts.asc',
+    {},function(err,body){
+      if(err){cb(err);return;}
+      cb(null,body||[]);
+    });
+}
+/* 推送整个空间的数据 */
+function sbPush(wsId,data,cb){
+  var recs=dataToRecords(data);
+  if(!recs.length){cb&&cb(null,0);return;}
+  rpc('push_records',{p_ws:wsId,p_records:recs},function(err,body){
+    cb&&cb(err,body);
+  });
+}
+/* 推送单条变更（增量，性能更好） */
+function sbPushOne(wsId,type,item,cb){
+  var kind=KIND_MAP[type];
+  if(!kind||!item||!item.id){cb&&cb(null);return;}
+  var payload={};
+  for(var k in item){
+    if(item.hasOwnProperty(k)&&k!=='_ts'&&k!=='_deleted'){payload[k]=item[k];}
+  }
+  rpc('push_records',{p_ws:wsId,p_records:[{
+    id:kind+':'+item.id,kind:kind,payload:payload,
+    ts:item._ts||Date.now(),deleted:!!item._deleted
+  }]},function(err){cb&&cb(err);});
+}
+/* 推送空间元数据 */
+function sbPushMeta(wsId,meta,cb){
+  rpc('push_records',{p_ws:wsId,p_records:[{
+    id:'meta:main',kind:'meta',payload:meta||{},ts:Date.now(),deleted:false
+  }]},function(err){cb&&cb(err);});
+}
+/* 重命名空间 */
+function renameWorkspace(wsId,name,cb){
+  sbAuthed('/rest/v1/workspaces?id=eq.'+wsId,
+    {method:'PATCH',body:{name:name},prefer:'return=representation'},
+    function(err,body){cb&&cb(err,body);});
+}
+
+/* ---------- Realtime 实时订阅（WebSocket） ---------- */
+function stopRealtime(){
+  if(auth.rtChannel){
+    try{auth.rtChannel.close();}catch(e){}
+    auth.rtChannel=null;
+  }
+}
+function startRealtime(wsId){
+  stopRealtime();
+  if(!wsId||!auth.session||!window.WebSocket){return;}
+  try{
+    var wsUrl=SB_URL.replace(/^https/,'wss')+'/realtime/v1/websocket?apikey='+
+              encodeURIComponent(SB_ANON)+'&vsn=1.0.0';
+    var sock=new WebSocket(wsUrl);
+    auth.rtChannel=sock;
+    var topic='realtime:qg:'+wsId;
+    var hb=null;
+    sock.onopen=function(){
+      sock.send(JSON.stringify({
+        topic:topic,event:'phx_join',
+        payload:{config:{
+          broadcast:{self:false},presence:{key:''},
+          postgres_changes:[
+            {event:'*',schema:'public',table:'records',filter:'workspace_id=eq.'+wsId},
+            {event:'*',schema:'public',table:'workspaces',filter:'id=eq.'+wsId},
+            {event:'*',schema:'public',table:'workspace_members',filter:'workspace_id=eq.'+wsId}
+          ]
+        },access_token:auth.session.access_token},
+        ref:String(++auth.rtRef)
+      }));
+      hb=setInterval(function(){
+        if(sock.readyState===1){
+          sock.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++auth.rtRef)}));
+        }
+      },28000);
+    };
+    sock.onmessage=function(ev){
+      var m;try{m=JSON.parse(ev.data);}catch(e){return;}
+      if(m.event==='postgres_changes'&&m.payload&&m.payload.data){
+        var tbl=m.payload.data.table||'';
+        if(state.rtPullTimer){clearTimeout(state.rtPullTimer);}
+        state.rtPullTimer=setTimeout(function(){
+          if(tbl==='records'){
+            pullRemote(function(){renderAll();});
+          }else{
+            /* workspaces / workspace_members 变了：刷新空间元信息（名字、成员数） */
+            syncWorkspaceMeta(function(){pullRemote(function(){renderAll();});});
+          }
+        },350);
+      }
+    };
+    sock.onclose=function(){
+      if(hb){clearInterval(hb);hb=null;}
+      /* 5 秒后自动重连（仅当仍是同一空间且已登录） */
+      setTimeout(function(){
+        if(auth.session&&auth.currentWs&&auth.currentWs.id===wsId&&!auth.rtChannel){
+          startRealtime(wsId);
+        }
+      },5000);
+      if(auth.rtChannel===sock){auth.rtChannel=null;}
+    };
+    sock.onerror=function(){};
+  }catch(e){}
+}
+
+/* 刷新当前空间的元信息（名字 / 成员数），用于接收别人的改名 */
+function syncWorkspaceMeta(cb){
+  if(!auth.session||!auth.currentWs){cb&&cb();return;}
+  var curId=auth.currentWs.id;
+  loadWorkspaces(function(err){
+    if(err){cb&&cb(err);return;}
+    var found=null;
+    for(var i=0;i<auth.workspaces.length;i++){
+      if(auth.workspaces[i].id===curId){found=auth.workspaces[i];break;}
+    }
+    if(found){
+      var renamed=found.name!==auth.currentWs.name;
+      auth.currentWs=found;
+      if(found.kind==='personal'){auth.personalWs=found;}else{auth.teamWs=found;}
+      applySpaceModeUI();
+      if(renamed){showToast('空间已更名为「'+found.name+'」');}
+    }else{
+      /* 当前空间已被移除（比如被踢出团队） */
+      showToast('你已不在该空间中');
+      var fallback=auth.teamWs||auth.personalWs||auth.workspaces[0];
+      if(fallback){activateWorkspace(fallback,function(){});}
+    }
+    loadWsMembers(curId,function(){cb&&cb();});
+  });
+}
+
+/* ---------- 登录 UI ---------- */
+var authTab='login';
+function showAuthScreen(){
+  document.getElementById('authScreen').classList.add('show');
+  setAuthTab('login');
+  setAuthMsg('','');
+}
+function hideAuthScreen(){
+  document.getElementById('authScreen').classList.remove('show');
+}
+function setAuthTab(tab){
+  authTab=tab;
+  var tabs=document.querySelectorAll('.auth-tab');
+  for(var i=0;i<tabs.length;i++){
+    tabs[i].classList.toggle('active',tabs[i].getAttribute('data-authtab')===tab);
+  }
+  document.getElementById('authNickField').style.display=(tab==='signup')?'block':'none';
+  document.getElementById('authSubmit').textContent=(tab==='signup')?'注册并开始使用':'登录';
+  document.getElementById('authPassword').setAttribute('autocomplete',
+    (tab==='signup')?'new-password':'current-password');
+  document.getElementById('authPwHint').textContent=(tab==='signup')
+    ? '注册不需要邮箱验证，填完直接就能用。'
+    : '忘记密码？换个邮箱重新注册，再用邀请码加回团队。';
+  setAuthMsg('','');
+}
+function setAuthMsg(msg,type){
+  var el=document.getElementById('authMsg');
+  if(!msg){el.className='auth-msg';el.textContent='';return;}
+  el.className='auth-msg show '+(type||'err');
+  el.innerHTML=msg;
+}
+function translateAuthError(msg){
+  msg=String(msg||'');
+  if(/Invalid login credentials/i.test(msg)){return '邮箱或密码不对。第一次用请点上面的「注册」。';}
+  if(/User already registered|already been registered/i.test(msg)){return '这个邮箱已经注册过了，请点「登录」。';}
+  if(/Password should be at least/i.test(msg)){return '密码太短，至少 6 位。';}
+  if(/Unable to validate email|invalid format|valid email/i.test(msg)){return '邮箱格式不对，检查一下。';}
+  if(/rate limit|too many/i.test(msg)){return '操作太频繁，等一分钟再试。';}
+  if(/timeout|超时/i.test(msg)){return '网络超时，检查网络后重试。';}
+  if(/network|网络/i.test(msg)){return '网络连不上，检查网络后重试。';}
+  return msg;
+}
+function doAuthSubmit(){
+  var email=document.getElementById('authEmail').value.trim();
+  var pw=document.getElementById('authPassword').value;
+  var nick=document.getElementById('authNick').value.trim();
+  var btn=document.getElementById('authSubmit');
+  if(!email||email.indexOf('@')<0){setAuthMsg('请填写正确的邮箱','err');return;}
+  if(!pw||pw.length<6){setAuthMsg('密码至少 6 位','err');return;}
+  btn.disabled=true;
+  btn.textContent=(authTab==='signup')?'注册中...':'登录中...';
+  setAuthMsg('','');
+  var after=function(err){
+    if(err){
+      btn.disabled=false;
+      btn.textContent=(authTab==='signup')?'注册并开始使用':'登录';
+      setAuthMsg(translateAuthError(err.message),'err');
+      return;
+    }
+    setAuthMsg('成功，正在加载你的数据...','ok');
+    bootAfterLogin(function(e2){
+      btn.disabled=false;
+      btn.textContent=(authTab==='signup')?'注册并开始使用':'登录';
+      if(e2){setAuthMsg(translateAuthError(e2.message),'err');return;}
+      hideAuthScreen();
+      showToast('欢迎，'+currentNickname()+'！');
+    });
+  };
+  if(authTab==='signup'){signUp(email,pw,nick,after);}
+  else{signIn(email,pw,after);}
+}
+
+/* ---------- 登录后启动流程 ---------- */
+function bootAfterLogin(cb){
+  auth.guestMode=false;
+  loadProfile(function(){
+    ensureWorkspaces(function(err){
+      if(err){cb&&cb(err);return;}
+      /* 恢复上次使用的空间；否则按当前 spaceMode 选 */
+      var savedId=loadCurrentWsId(),target=null;
+      for(var i=0;i<auth.workspaces.length;i++){
+        if(auth.workspaces[i].id===savedId){target=auth.workspaces[i];break;}
+      }
+      if(!target){
+        target=(state.spaceMode==='personal')?auth.personalWs:auth.teamWs;
+      }
+      if(!target){target=auth.workspaces[0];}
+      activateWorkspace(target,function(e){
+        updateUserBadge();
+        cb&&cb(e||null);
+      });
+    });
+  });
+}
+/* 激活某个空间：切 spaceMode、拉数据、开实时订阅 */
+function activateWorkspace(ws,cb){
+  if(!ws){cb&&cb(new Error('空间不存在'));return;}
+  auth.currentWs=ws;
+  saveCurrentWsId(ws.id);
+  var isPersonal=ws.kind==='personal';
+  state.spaceMode=isPersonal?'personal':'team';
+  setLSSpaceMode(state.spaceMode);
+  if(ws.kind==='personal'){auth.personalWs=ws;}else{auth.teamWs=ws;}
+  /* 先用本地缓存渲染，避免白屏 */
+  var cached=getLSCache(state.spaceMode);
+  if(cached){state.data=normalizeData(cached,isPersonal);}
+  else{state.data=buildDefaultData(isPersonal);}
+  applySpaceModeUI();
+  renderAll();
+  setSyncStatus('connecting');
+  loadWsMembers(ws.id,function(){applySpaceModeUI();renderAll();});
+  pullRemote(function(err){
+    renderCountdown();
+    renderAll();
+    startRealtime(ws.id);
+    cb&&cb(err||null);
+  });
+}
+
+/* ---------- 用户徽章 ---------- */
+function updateUserBadge(){
+  var badge=document.getElementById('userBadge');
+  if(!badge){return;}
+  if(auth.session){
+    var nick=currentNickname();
+    badge.style.display='flex';
+    document.getElementById('ubAvatar').textContent=nick.charAt(0);
+    document.getElementById('ubName').textContent=nick;
+    badge.title=(auth.session.user&&auth.session.user.email)||nick;
+  }else{
+    badge.style.display='flex';
+    document.getElementById('ubAvatar').textContent='?';
+    document.getElementById('ubName').textContent='登录';
+    badge.title='点击登录，数据即可多设备同步';
+  }
+}
+
+/* ---------- 空间管理弹窗 ---------- */
+function setWsMsg(msg,type){
+  var el=document.getElementById('wsMsg');
+  if(!el){return;}
+  if(!msg){el.className='auth-msg';el.textContent='';return;}
+  el.className='auth-msg show '+(type||'err');
+  el.innerHTML=msg;
+}
+function showWorkspaceModal(){
+  var guest=document.getElementById('wsGuestBox');
+  var userBox=document.getElementById('wsUserBox');
+  setWsMsg('','');
+  if(!auth.session){
+    guest.style.display='block';
+    userBox.style.display='none';
+  }else{
+    guest.style.display='none';
+    userBox.style.display='block';
+    renderWsList();
+    renderInviteBox();
+  }
+  document.getElementById('syncModal').classList.add('show');
+}
+function renderWsList(){
+  var el=document.getElementById('wsList');
+  if(!el){return;}
+  if(!auth.workspaces.length){el.innerHTML='<div class="empty">暂无空间</div>';return;}
+  var h='';
+  for(var i=0;i<auth.workspaces.length;i++){
+    var w=auth.workspaces[i];
+    var cur=auth.currentWs&&auth.currentWs.id===w.id;
+    var isP=w.kind==='personal';
+    h+='<button class="ws-item'+(cur?' current':'')+' kind-'+w.kind+'" data-wsid="'+w.id+'">'
+      + '<span class="ws-item-icon">'+(isP?'🔒':'👥')+'</span>'
+      + '<span class="ws-item-body">'
+      +   '<span class="ws-item-name">'+escapeHtml(w.name)+(cur?' ·<span style="color:var(--primary);font-size:0.72rem"> 当前</span>':'')+'</span>'
+      +   '<span class="ws-item-meta">'+(isP?'私密 · 只有你能看':'团队 · '+w.member_count+' 人')
+      +     (w.is_owner?' · 我创建的':'')+'</span>'
+      + '</span>'
+      + (w.invite_code?'<span class="ws-item-code">'+escapeHtml(w.invite_code)+'</span>':'')
+      + '</button>';
+  }
+  el.innerHTML=h;
+  var btns=el.querySelectorAll('.ws-item');
+  for(var j=0;j<btns.length;j++){
+    btns[j].addEventListener('click',function(){
+      var id=this.getAttribute('data-wsid');
+      var target=null;
+      for(var k=0;k<auth.workspaces.length;k++){
+        if(auth.workspaces[k].id===id){target=auth.workspaces[k];break;}
+      }
+      if(!target||(auth.currentWs&&auth.currentWs.id===id)){
+        document.getElementById('syncModal').classList.remove('show');return;
+      }
+      document.getElementById('syncModal').classList.remove('show');
+      showToast('正在切换到「'+target.name+'」...');
+      activateWorkspace(target,function(){
+        showToast('已切换到「'+target.name+'」');
+      });
+    });
+  }
+}
+function renderInviteBox(){
+  var box=document.getElementById('wsInviteBox');
+  var ws=auth.teamWs;
+  if(!ws||!ws.invite_code){box.style.display='none';return;}
+  box.style.display='block';
+  document.getElementById('wsInviteCode').textContent=ws.invite_code;
+  var link=buildInviteLink(ws.invite_code);
+  document.getElementById('wsShareLink').value=link;
+  document.getElementById('wsQrImg').src=buildQrImageUrl(link);
+}
+function buildInviteLink(code){
+  return 'https://htwo666.github.io/qinggan-trip-ledger/?join='+encodeURIComponent(code||'');
+}
+/* 处理 URL 中的 ?join=CODE 邀请链接 */
+function handleJoinUrlParam(){
+  var code=null;
+  try{
+    var url=new URL(window.location.href);
+    code=url.searchParams.get('join');
+    if(code){
+      url.searchParams.delete('join');
+      window.history.replaceState({},document.title,url.toString());
+    }
+  }catch(e){}
+  if(!code){return;}
+  state.pendingJoinCode=String(code).toUpperCase().trim();
+}
+/* 登录后消费待处理的邀请码 */
+function consumePendingJoin(cb){
+  var code=state.pendingJoinCode;
+  if(!code||!auth.session){cb&&cb();return;}
+  state.pendingJoinCode=null;
+  joinWorkspace(code,function(err,ws){
+    if(err){showToast('邀请码无效或已失效');cb&&cb();return;}
+    loadWorkspaces(function(){
+      activateWorkspace(ws,function(){
+        showToast('已加入团队「'+ws.name+'」');
+        cb&&cb();
+      });
+    });
+  });
+}
+function doJoinTeam(){
+  var input=document.getElementById('wsJoinInput');
+  var code=String(input.value||'').toUpperCase().trim();
+  if(code.length<4){setWsMsg('请输入完整的邀请码','err');return;}
+  var btn=document.getElementById('wsJoinBtn');
+  btn.disabled=true;btn.textContent='加入中...';
+  joinWorkspace(code,function(err,ws){
+    btn.disabled=false;btn.textContent='加入';
+    if(err){setWsMsg(/邀请码无效/.test(err.message)?'邀请码不对，跟队友核对一下':translateAuthError(err.message),'err');return;}
+    input.value='';
+    loadWorkspaces(function(){
+      renderWsList();renderInviteBox();
+      setWsMsg('已加入「'+escapeHtml(ws.name)+'」，正在切换...','ok');
+      setTimeout(function(){
+        document.getElementById('syncModal').classList.remove('show');
+        activateWorkspace(ws,function(){showToast('已加入团队「'+ws.name+'」');});
+      },700);
+    });
+  });
+}
+function doCreateTeam(){
+  var name=prompt('新团队叫什么名字？','我的新团队');
+  if(name===null){return;}
+  var btn=document.getElementById('wsNewTeamBtn');
+  btn.disabled=true;btn.textContent='创建中...';
+  createWorkspace(name||'我的新团队','team',function(err,ws){
+    btn.disabled=false;btn.textContent='＋ 新建一个团队';
+    if(err){setWsMsg(translateAuthError(err.message),'err');return;}
+    loadWorkspaces(function(){
+      renderWsList();renderInviteBox();
+      setWsMsg('已创建「'+escapeHtml(ws.name)+'」，邀请码 '+ws.invite_code,'ok');
+    });
+  });
+}
+
+/* ---------- 绑定所有认证相关事件 ---------- */
+/* 点击横幅标题改空间名（同步到所有设备） */
+function initRenameHandler(){
+  var title=document.getElementById('bannerTitle');
+  if(!title){return;}
+  title.style.cursor='pointer';
+  title.title='点击可修改空间名称';
+  title.addEventListener('click',function(){
+    if(!auth.session||!auth.currentWs){
+      showToast('登录后才能修改空间名');return;
+    }
+    var cur=auth.currentWs.name;
+    var name=prompt('修改空间名称（会同步到所有队友的设备）：',cur);
+    if(name===null){return;}
+    name=String(name).trim();
+    if(!name||name===cur){return;}
+    setSyncStatus('syncing');
+    renameWorkspace(auth.currentWs.id,name,function(err){
+      if(err){setSyncStatus('offline');showToast('改名失败：'+err.message);return;}
+      auth.currentWs.name=name;
+      for(var i=0;i<auth.workspaces.length;i++){
+        if(auth.workspaces[i].id===auth.currentWs.id){auth.workspaces[i].name=name;}
+      }
+      if(auth.currentWs.kind==='personal'){auth.personalWs=auth.currentWs;}
+      else{auth.teamWs=auth.currentWs;}
+      applySpaceModeUI();
+      setSyncStatus('synced');
+      showToast('已改名为「'+name+'」，队友会自动看到');
+    });
+  });
+}
+
+function initAuthModule(){
+  initRenameHandler();
+  /* 登录页 tab */
+  var tabs=document.querySelectorAll('.auth-tab');
+  for(var i=0;i<tabs.length;i++){
+    tabs[i].addEventListener('click',function(){
+      setAuthTab(this.getAttribute('data-authtab'));
+    });
+  }
+  document.getElementById('authSubmit').addEventListener('click',doAuthSubmit);
+  var enterSubmit=function(e){if(e.key==='Enter'||e.keyCode===13){doAuthSubmit();}};
+  document.getElementById('authEmail').addEventListener('keydown',enterSubmit);
+  document.getElementById('authPassword').addEventListener('keydown',enterSubmit);
+  document.getElementById('authNick').addEventListener('keydown',enterSubmit);
+  /* 本地试用 */
+  document.getElementById('authSkip').addEventListener('click',function(){
+    auth.guestMode=true;
+    try{localStorage.setItem('qinggan_guest_ok','1');}catch(e){}
+    hideAuthScreen();
+    setSyncStatus('local');
+    updateUserBadge();
+    renderAll();
+    showToast('本地试用模式 · 数据仅存本机');
+  });
+  /* 用户徽章 → 未登录去登录页，已登录开空间管理 */
+  document.getElementById('userBadge').addEventListener('click',function(){
+    if(auth.session){showWorkspaceModal();}
+    else{showAuthScreen();}
+  });
+  /* 空间弹窗内的按钮 */
+  document.getElementById('wsGoLoginBtn').addEventListener('click',function(){
+    document.getElementById('syncModal').classList.remove('show');
+    showAuthScreen();
+  });
+  document.getElementById('wsJoinBtn').addEventListener('click',doJoinTeam);
+  document.getElementById('wsJoinInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.keyCode===13){doJoinTeam();}
+  });
+  document.getElementById('wsNewTeamBtn').addEventListener('click',doCreateTeam);
+  document.getElementById('wsCopyLinkBtn').addEventListener('click',function(){
+    var inp=document.getElementById('wsShareLink');
+    inp.select();
+    try{document.execCommand('copy');showToast('邀请链接已复制');}
+    catch(e){showToast('请长按手动复制');}
+  });
+  document.getElementById('wsLogoutBtn').addEventListener('click',function(){
+    showConfirm('退出登录','退出后本设备将回到本地模式，云端数据不会丢失，重新登录即可恢复。',function(){
+      signOut(function(){
+        document.getElementById('syncModal').classList.remove('show');
+        updateUserBadge();
+        showAuthScreen();
+        showToast('已退出登录');
+      });
+    });
+  });
+  /* 邀请码输入自动大写 */
+  document.getElementById('wsJoinInput').addEventListener('input',function(){
+    this.value=this.value.toUpperCase();
   });
 }
 
@@ -880,13 +1806,9 @@ function buildDefaultData(isPersonal){
 function initWorkspace(){
   /* 1. 读取空间模式（默认团队） */
   state.spaceMode=getLSSpaceMode();
-  /* 2. 团队空间：初始化 workspaceId */
-  var existingId=getLSWorkspaceId();
-  if(existingId){state.workspaceId=existingId;}
-  else{
-    state.workspaceId=genWorkspaceId();
-    setLSWorkspaceId(state.workspaceId);
-  }
+  /* 2. workspaceId 由登录后的 Supabase 空间决定，这里不再随机生成
+        （老版本随机生成 ID 正是"假同步"的根源：手机和电脑各自生成不同 ID） */
+  state.workspaceId=null;
   /* 3. 加载团队空间缓存数据（兼容老版本 _cache 无后缀的迁移） */
   var teamCached=getLSCache('team');
   if(!teamCached){
@@ -933,57 +1855,90 @@ function normalizeData(d,isPersonal){
 /* 应用空间模式到 UI（body class、切换器激活态、横幅标题、同步条提示） */
 function applySpaceModeUI(){
   var isPersonal=state.spaceMode==='personal';
+  var logged=!!(auth.session&&auth.currentWs);
   document.body.classList.toggle('space-personal',isPersonal);
   /* 切换器激活态 */
   var teamBtn=document.getElementById('spaceTeamBtn');
   var persBtn=document.getElementById('spacePersonalBtn');
   if(teamBtn){teamBtn.classList.toggle('active',!isPersonal);}
   if(persBtn){persBtn.classList.toggle('active',isPersonal);}
-  /* 横幅标题与副标题 */
+  /* 横幅标题：已登录时显示真实空间名（这样改名能多设备同步） */
   var title=document.getElementById('bannerTitle');
   var sub=document.getElementById('bannerSub');
-  if(title){title.textContent=isPersonal?'个人空间 · 旅行记账台':'青甘大环线 · 旅行记账台';}
-  if(sub){sub.textContent=isPersonal?'私人记账 · 仅本地保存，不上传云端':'4人 11天自驾 · 2026-09-25 至 10-05';}
-  /* 同步码按钮（个人空间禁用） */
+  if(title){
+    if(logged){
+      title.textContent=auth.currentWs.name+(isPersonal?' · 私密记账':' · 旅行记账台');
+    }else{
+      title.textContent=isPersonal?'个人空间 · 旅行记账台':'青甘大环线 · 旅行记账台';
+    }
+  }
+  if(sub){
+    if(!logged){
+      sub.textContent=isPersonal?'私人记账 · 本地模式':'4人 11天自驾 · 2026-09-25 至 10-05';
+    }else if(isPersonal){
+      sub.textContent='私密云端 · 只有你能看到 · 多设备同步';
+    }else{
+      var mc=auth.currentWs.member_count||1;
+      sub.textContent=mc+'人共享 · 2026-09-25 至 10-05 · 实时同步';
+    }
+  }
+  /* 空间按钮：任何时候都能点（打开空间管理弹窗） */
   var syncCodeBtn=document.getElementById('syncCodeBtn');
   if(syncCodeBtn){
-    syncCodeBtn.disabled=isPersonal;
-    syncCodeBtn.style.opacity=isPersonal?'0.4':'1';
-    syncCodeBtn.style.cursor=isPersonal?'not-allowed':'pointer';
-    syncCodeBtn.title=isPersonal?'个人空间不需同步':'同步码';
+    syncCodeBtn.disabled=false;
+    syncCodeBtn.style.opacity='1';
+    syncCodeBtn.style.cursor='pointer';
+    syncCodeBtn.textContent=logged?'空间':'登录';
+    syncCodeBtn.title='空间管理 / 邀请队友';
   }
   /* 空间标签状态 */
   var teamTag=document.getElementById('teamTag');
   var persTag=document.getElementById('personalTag');
-  if(teamTag){teamTag.textContent=isPersonal?'未激活':'同步中';}
-  if(persTag){persTag.textContent=isPersonal?'仅本地':'未激活';}
+  if(logged){
+    if(teamTag){teamTag.textContent=isPersonal?'云端':'当前';}
+    if(persTag){persTag.textContent=isPersonal?'当前':'云端';}
+  }else{
+    if(teamTag){teamTag.textContent=isPersonal?'未激活':'本地';}
+    if(persTag){persTag.textContent=isPersonal?'本地':'未激活';}
+  }
+  updateUserBadge();
 }
 /* 切换空间模式 */
 function switchSpace(mode){
-  if(mode!==state.spaceMode){
-    /* 保存当前数据引用回对应空间 */
+  if(mode===state.spaceMode){return;}
+  /* 未登录（本地试用）：保持老的纯本地双空间逻辑 */
+  if(!auth.session){
     if(state.spaceMode==='personal'){state.personalData=state.data;}
     else{state.teamData=state.data;}
-    /* 切换模式 */
     state.spaceMode=mode;
     setLSSpaceMode(mode);
-    /* 切换数据指针 */
     state.data=(mode==='personal')?state.personalData:state.teamData;
-    /* 停掉旧轮询 */
     if(state.pollTimer){clearInterval(state.pollTimer);state.pollTimer=null;}
-    /* 应用 UI */
     applySpaceModeUI();
-    /* 重渲染 */
     renderAll();
-    /* 团队空间：拉云端 + 启动轮询；个人空间：显示仅本地状态 */
-    if(mode==='team'){
-      setSyncStatus('connecting');
-      pullRemote(function(){renderAll();startPolling();});
-    }else{
-      setSyncStatus('personal');
-    }
-    showToast(mode==='personal'?'已切换到个人空间（仅本地）':'已切换到团队空间（云端同步）');
+    setSyncStatus('local');
+    showToast(mode==='personal'?'已切到个人空间（本地）':'已切到团队空间（本地）');
+    return;
   }
+  /* 已登录：切到对应的 Supabase 空间，两个空间都云端同步 */
+  var target=(mode==='personal')?auth.personalWs:auth.teamWs;
+  if(!target){
+    /* 该空间还不存在，现建一个 */
+    setSyncStatus('syncing');
+    createWorkspace(mode==='personal'?'我的个人空间':'青甘四人组',mode,function(err,ws){
+      if(err){showToast('创建空间失败：'+err.message);setSyncStatus('offline');return;}
+      loadWorkspaces(function(){
+        var t=(mode==='personal')?auth.personalWs:auth.teamWs;
+        activateWorkspace(t||ws,function(){
+          showToast(mode==='personal'?'已切到个人空间（私密云端）':'已切到团队空间（共享云端）');
+        });
+      });
+    });
+    return;
+  }
+  activateWorkspace(target,function(){
+    showToast(mode==='personal'?'已切到个人空间（私密云端）':'已切到团队空间（共享云端）');
+  });
 }
 function filterPreset(arr,prefix){
   if(!arr||!arr.length){return arr||[];}
@@ -1025,17 +1980,63 @@ function mergeData(local,remote){
 }
 /* 拉取云端数据 */
 function pullRemote(cb){
-  /* 个人空间：不拉云端，仅本地 */
-  if(state.spaceMode==='personal'){setSyncStatus('personal');if(cb)cb();return;}
+  /* 未登录：纯本地模式，不访问云端 */
+  if(!auth.session||!auth.currentWs){setSyncStatus('local');if(cb)cb();return;}
   if(!state.isOnline){setSyncStatus('offline');if(cb)cb();return;}
+  var ws=auth.currentWs,modeKey=(ws.kind==='personal')?'personal':'team';
+  /* 每 5 次拉取校验一次空间名（Realtime 失效时的兜底） */
+  state.pullCount_=(state.pullCount_||0)+1;
+  if(state.pullCount_%5===0&&!state.metaChecking_){
+    state.metaChecking_=true;
+    var curName=ws.name;
+    rpc('my_workspaces',{},function(e2,list){
+      state.metaChecking_=false;
+      if(e2||!list){return;}
+      auth.workspaces=list;
+      for(var i=0;i<list.length;i++){
+        if(list[i].id===ws.id){
+          if(list[i].name!==curName||list[i].member_count!==ws.member_count){
+            auth.currentWs=list[i];
+            if(list[i].kind==='personal'){auth.personalWs=list[i];}else{auth.teamWs=list[i];}
+            applySpaceModeUI();
+          }
+          break;
+        }
+      }
+    });
+  }
   remoteRead(function(err,data){
-    if(err){setSyncStatus('offline');showAlert('读取云端失败，使用本地缓存');if(cb)cb();return;}
+    if(err){
+      setSyncStatus('offline');
+      showAlert('读取云端失败，正在用本地缓存，联网后自动重试');
+      if(cb)cb(err);return;
+    }
     if(data){
       var merged=mergeData(state.data,data);
-      /* 云端合并后同样过滤预置示例条目，防止旧预置数据回流 */
       merged.prepItems=filterPreset(merged.prepItems,'pi');
       merged.todos=filterPreset(merged.todos,'td');
-      state.data=merged;state.lastRemoteData=data;setLSCache(merged);
+      /* 注意：空间名的唯一权威来源是 workspaces 表，不是 records 的 meta。
+         meta 里的 teamName 只作为历史兼容字段，绝不用它覆盖 ws.name，
+         否则过期的 meta 会把别人的改名顶掉（这正是"假同步"的另一种表现）。 */
+      if(data._meta){delete data._meta.teamName;}
+      state.data=merged;state.lastRemoteData=data;setLSCache(merged,modeKey);
+    }else{
+      /* 云端是空的：首次登录，把本地数据上传上去（数据迁移） */
+      if(!state.migrated_[ws.id]){
+        state.migrated_[ws.id]=true;
+        var local=state.data;
+        var hasLocal=local&&((local.expenses||[]).length||(local.prepaid||[]).length||
+                             (local.prepItems||[]).length||(local.todos||[]).length);
+        if(hasLocal){
+          setSyncStatus('syncing');
+          remoteWrite(local,function(e){
+            setSyncStatus(e?'offline':'synced');
+            if(!e){showToast('本机数据已上传到云端');}
+            if(cb)cb();
+          });
+          return;
+        }
+      }
     }
     setSyncStatus('synced');hideAlert();if(cb)cb();
   });
@@ -1046,6 +2047,7 @@ function scheduleWrite(){
   state.writeTimer=setTimeout(function(){doWrite();},WRITE_DEBOUNCE);
 }
 function doWrite(){
+  if(!auth.session||!auth.currentWs){setSyncStatus('local');return;}
   if(!state.isOnline){state.pendingWrites=true;setSyncStatus('offline');return;}
   setSyncStatus('syncing');
   state.data._ts=Date.now();
@@ -1059,10 +2061,10 @@ function doWrite(){
 }
 /* 状态变更后调用 */
 function saveData(){
-  setLSCache(state.data);
-  /* 个人空间：仅本地保存，不同步云端 */
-  if(state.spaceMode==='personal'){return;}
-  /* 团队空间：触发防抖写入 */
+  setLSCache(state.data,state.spaceMode);
+  /* 未登录（本地试用）：只存本机 */
+  if(!auth.session||!auth.currentWs){setSyncStatus('local');return;}
+  /* 已登录：团队空间和个人空间都同步到云端（个人空间由 RLS 保证只有本人可见） */
   scheduleWrite();
 }
 
@@ -1079,7 +2081,11 @@ function setSyncStatus(s){
     case 'offline':text.textContent='离线模式';dot.classList.add('offline');retry.style.display='inline-block';break;
     case 'connecting':text.textContent='连接中...';dot.classList.add('syncing');retry.style.display='none';break;
     case 'personal':
-      text.textContent='个人空间 · 仅本地';
+      text.textContent='私密空间 · 已同步';
+      retry.style.display='none';
+      break;
+    case 'local':
+      text.textContent='本地模式 · 未登录';
       dot.classList.add('offline');
       retry.style.display='none';
       break;
@@ -1094,16 +2100,20 @@ function hideAlert(){document.getElementById('alertBanner').classList.remove('sh
 
 /* 轮询 */
 function startPolling(){
-  /* 个人空间：无需轮询云端 */
-  if(state.spaceMode==='personal'){setSyncStatus('personal');return;}
+  /* 未登录：无云端可轮询 */
+  if(!auth.session||!auth.currentWs){setSyncStatus('local');return;}
   if(state.pollTimer){clearInterval(state.pollTimer);}
-  state.pollTimer=setInterval(function(){pullRemote(function(){renderAll();});},POLL_INTERVAL);
+  /* Realtime 已经推送变更，这里只做兜底轮询（防止 WebSocket 被网络环境掐断） */
+  var interval=auth.rtChannel?120000:POLL_INTERVAL;
+  state.pollTimer=setInterval(function(){pullRemote(function(){renderAll();});},interval);
 }
 /* 可见性变化时刷新 */
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){return;}
-  if(state.spaceMode==='personal'){renderAll();return;}
+  if(!auth.session||!auth.currentWs){renderAll();return;}
+  /* 回到前台立刻拉一次，并重连 Realtime */
   pullRemote(function(){renderAll();});
+  if(!auth.rtChannel){startRealtime(auth.currentWs.id);}
 });
 /* 网络状态 */
 window.addEventListener('online',function(){
@@ -1114,86 +2124,11 @@ window.addEventListener('online',function(){
 window.addEventListener('offline',function(){state.isOnline=false;setSyncStatus('offline');});
 
 /* 同步码功能 */
-function showSyncModal(){
-  if(state.spaceMode==='personal'){
-    showToast('个人空间不需要同步码');
-    return;
-  }
-  /* 更新同步码显示 */
-  document.getElementById('syncCodeDisplay').textContent=state.workspaceId;
-  /* 更新分享链接 */
-  var shareLink=buildShareLink();
-  document.getElementById('syncShareLink').value=shareLink;
-  /* 更新二维码 */
-  document.getElementById('syncQrImg').src=buildQrImageUrl(shareLink);
-  /* 重置到第一个 tab */
-  switchSyncTab('qr');
-  document.getElementById('syncModal').classList.add('show');
-}
-/* 切换同步弹窗的 tab */
-function switchSyncTab(tab){
-  var tabs=document.querySelectorAll('.sync-tab');
-  var contents=document.querySelectorAll('.sync-tab-content');
-  for(var i=0;i<tabs.length;i++){
-    var active=tabs[i].getAttribute('data-synctab')===tab;
-    tabs[i].classList.toggle('active',active);
-  }
-  for(var j=0;j<contents.length;j++){
-    var ca=contents[j].getAttribute('data-synctab')===tab;
-    contents[j].classList.toggle('active',ca);
-  }
-}
-function bindSyncCode(code){
-  if(state.spaceMode==='personal'){
-    showToast('请先切换到团队空间');
-    return;
-  }
-  if(!code||code.length<10){showToast('同步码格式错误');return;}
-  state.workspaceId=code;setLSWorkspaceId(code);
-  setSyncStatus('connecting');
-  pullRemote(function(){
-    renderAll();
-    if(state.syncStatus==='synced'){showToast('已绑定云端数据');}
-    else{showToast('已绑定，云端无数据，将初始化');}
-  });
-  document.getElementById('syncModal').classList.remove('show');
-}
-/* 处理 URL 中的 ?sync=xxx 邀请链接 */
-function handleSyncUrlParam(){
-  try{
-    var url=new URL(window.location.href);
-    var code=url.searchParams.get('sync');
-    if(code&&code.length>10&&code.startsWith('wb_qinggan_')){
-      /* 自动切换到团队空间 */
-      if(state.spaceMode!=='team'){
-        state.spaceMode='team';
-        setLSSpaceMode('team');
-        state.data=state.teamData;
-        applySpaceModeUI();
-      }
-      /* 弹出绑定确认 */
-      showConfirm(
-        '加入团队邀请',
-        '检测到邀请链接，是否绑定到该团队数据？\n\n同步码：'+code.slice(0,12)+'...',
-        function(){
-          state.workspaceId=code;setLSWorkspaceId(code);
-          setSyncStatus('connecting');
-          pullRemote(function(){
-            renderAll();
-            if(state.syncStatus==='synced'){showToast('已加入团队数据');}
-            else{showToast('已绑定，云端无数据，将初始化');}
-          });
-        }
-      );
-      /* 清除 URL 中的 sync 参数，避免刷新时重复触发 */
-      url.searchParams.delete('sync');
-      window.history.replaceState({},document.title,url.toString());
-    }
-  }catch(e){/* URL 解析失败忽略 */}
-}
+function showSyncModal(){showWorkspaceModal();}
 /* 构建分享链接 */
 function buildShareLink(){
-  return 'https://htwo666.github.io/qinggan-trip-ledger/?sync='+encodeURIComponent(state.workspaceId||'');
+  var code=(auth.teamWs&&auth.teamWs.invite_code)||'';
+  return 'https://htwo666.github.io/qinggan-trip-ledger/?join='+encodeURIComponent(code);
 }
 /* 构建二维码图片 URL（使用公共 QR 服务） */
 function buildQrImageUrl(text){
@@ -2458,29 +3393,7 @@ document.getElementById('syncCodeBtn').onclick=showSyncModal;
 document.getElementById('closeSyncModal').onclick=function(){
   document.getElementById('syncModal').classList.remove('show');
 };
-document.getElementById('bindSyncBtn').onclick=function(){
-  var code=document.getElementById('syncCodeInput').value.trim();
-  bindSyncCode(code);
-  document.getElementById('syncCodeInput').value='';
-};
-/* 同步弹窗 tab 切换 */
-var syncTabs=document.querySelectorAll('.sync-tab');
-for(var sti=0;sti<syncTabs.length;sti++){
-  syncTabs[sti].onclick=function(){switchSyncTab(this.getAttribute('data-synctab'));};
-}
-/* 复制分享链接 */
-document.getElementById('copyLinkBtn').onclick=function(){
-  var input=document.getElementById('syncShareLink');
-  input.select();input.setSelectionRange(0,99999);
-  try{
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(input.value).then(function(){showToast('链接已复制');});
-    }else{
-      document.execCommand('copy');
-      showToast('链接已复制');
-    }
-  }catch(e){showToast('复制失败，请手动选择');}
-};
+/* 旧的同步码绑定 / tab 切换 / 复制链接已由 initAuthModule() 内的空间管理弹窗接管 */
 /* 反馈按钮：跳转到 GitHub Issues（新标签页打开） */
 var feedbackBtn=document.getElementById('feedbackBtn');
 if(feedbackBtn){
@@ -2917,25 +3830,58 @@ function initAIModule(){
    初始化启动
    ============================================================ */
 function init(){
+  state.migrated_={};
+  /* 调试钩子（便于排查同步问题，不影响功能） */
+  try{window.__qg={state:state,auth:auth};}catch(e){}
   initWorkspace();
-  handleSyncUrlParam(); /* 处理 URL 中的 ?sync=xxx 邀请链接 */
+  handleJoinUrlParam();  /* 处理 URL 中的 ?join=邀请码 */
   renderCountdown();
   renderTabs();
   renderPanels();
-  initAIModule(); /* 初始化 AI 旅伴模块 */
-  /* 根据空间模式决定初始状态 */
-  if(state.spaceMode==='personal'){
-    setSyncStatus('personal');
-  }else{
-    setSyncStatus('connecting');
-  }
-  /* 先渲染界面（用本地缓存）后拉云端 */
-  pullRemote(function(){
-    renderCountdown();
-    renderCurrentPanel();
-    startPolling();
-  });
+  initAIModule();
+  initAuthModule();
   registerSW();
+  /* 恢复已保存的登录会话 */
+  auth.session=loadSession();
+  var guestOk=false;
+  try{guestOk=localStorage.getItem('qinggan_guest_ok')==='1';}catch(e){}
+  updateUserBadge();
+  if(auth.session&&auth.session.refresh_token){
+    /* 有会话：刷新 token 后进入正常流程 */
+    setSyncStatus('connecting');
+    refreshToken(function(err){
+      if(err){
+        /* 会话失效，回到登录页 */
+        setSyncStatus('local');
+        updateUserBadge();
+        showAuthScreen();
+        return;
+      }
+      bootAfterLogin(function(e){
+        updateUserBadge();
+        if(e){showToast('加载云端数据失败，正在用本地缓存');}
+        consumePendingJoin(function(){
+          startPolling();
+          state.bootDone=true;
+        });
+      });
+    });
+  }else if(state.pendingJoinCode){
+    /* 通过邀请链接进来的新用户：直接引导注册 */
+    setSyncStatus('local');
+    showAuthScreen();
+    setAuthTab('signup');
+    setAuthMsg('注册后将自动加入团队（邀请码 <b>'+escapeHtml(state.pendingJoinCode)+'</b>）','info');
+  }else if(guestOk){
+    /* 之前选过"本地试用" */
+    auth.guestMode=true;
+    setSyncStatus('local');
+    renderCurrentPanel();
+  }else{
+    /* 首次打开：显示登录页 */
+    setSyncStatus('local');
+    showAuthScreen();
+  }
 }
 /* DOM 就绪 */
 if(document.readyState==='loading'){
