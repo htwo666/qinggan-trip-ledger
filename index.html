@@ -1217,18 +1217,31 @@ function loadWsMembers(wsId,cb){
 }
 /* 确保用户至少有一个团队空间和一个个人空间 */
 function ensureWorkspaces(cb){
+  /* 防止同一页面并发调用导致重复建空间 */
+  if(state.ensuring_){
+    /* 已有一个在跑，等它完成 */
+    var tries=0;
+    var wait=function(){
+      if(!state.ensuring_){cb(null);return;}
+      if(++tries>60){cb(null);return;}
+      setTimeout(wait,250);
+    };
+    wait();return;
+  }
+  state.ensuring_=true;
+  var done=function(e){state.ensuring_=false;cb(e||null);};
   loadWorkspaces(function(err){
-    if(err){cb(err);return;}
+    if(err){done(err);return;}
     var need=[];
     if(!auth.teamWs){need.push(['青甘四人组','team']);}
     if(!auth.personalWs){need.push(['我的个人空间','personal']);}
-    if(!need.length){cb(null);return;}
+    if(!need.length){done(null);return;}
     var i=0;
     var next=function(){
-      if(i>=need.length){loadWorkspaces(function(e){cb(e||null);});return;}
+      if(i>=need.length){loadWorkspaces(function(e){done(e);});return;}
       var item=need[i++];
       createWorkspace(item[0],item[1],function(e){
-        if(e){cb(e);return;}
+        if(e){done(e);return;}
         next();
       });
     };
