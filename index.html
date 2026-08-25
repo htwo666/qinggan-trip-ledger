@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 本工作台通过 WorkBuddy 资料库能力（library skill）部署上线；数据存储使用 textdb.online 免费无鉴权 JSON 云存储 -->
+<!-- 数据存储：Supabase（Postgres + 账号鉴权 + Row Level Security + Realtime 实时同步） -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -830,13 +830,13 @@ body.space-personal .user-badge .ub-avatar{background:var(--accent);}
 <script>
 /* ============================================================
    青甘大环线旅行记账台 - 主脚本
-   存储：textdb.online 无鉴权 JSON 云存储
+   存储：Supabase（账号鉴权 + RLS 行级隔离 + Realtime 实时推送）
    ============================================================ */
 (function(){
 'use strict';
 /* ========== 常量与配置 ========== */
 var TRIP_START='2026-09-25',TRIP_END='2026-10-05',MEMBERS=['小美','阿杰','丸子','老王'];
-var DAILY_BUDGET=1000,POLL_INTERVAL=30000,WRITE_DEBOUNCE=2000,API_BASE='https://textdb.online';
+var DAILY_BUDGET=1000,POLL_INTERVAL=30000,WRITE_DEBOUNCE=2000;
 var PRESET_PREPAID=[
   {id:'pp1',date:'2026-08-20',category:'机票',amount:7160,paid:true,note:'4人往返机票',locked:true},
   {id:'pp2',date:'2026-08-25',category:'租车',amount:5559,paid:true,note:'11天租车费',locked:true},
@@ -927,7 +927,7 @@ var ICONS={
 function svgIcon(name){return '<svg viewBox="0 0 24 24" fill="none">'+(ICONS[name]||'')+'</svg>';}
 
 /* ============================================================
-   存储层 - textdb.online 云存储 + localStorage 离线缓存
+   存储层 - Supabase 云端 + localStorage 离线缓存
    ============================================================ */
 var LS_KEY='qinggan_accounting_workspace';
 /* 团队空间缓存（云端）与个人空间缓存（仅本地）分离 */
