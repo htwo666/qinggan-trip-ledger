@@ -828,7 +828,7 @@ body.space-personal .user-badge .ub-avatar{background:var(--accent);}
   <div class="ai-messages" id="aiMessages"></div>
   <div class="ai-input-area">
     <button class="ai-geo-btn" id="aiGeoBtn" title="分享当前位置给 AI">📍</button>
-    <input type="text" id="aiInput" placeholder="问点什么吧，回车发送..." />
+    <input type="text" id="aiInput" placeholder="问我，或直接说「午饭花了120」记账" />
     <button class="ai-send-btn" id="aiSendBtn">发送</button>
   </div>
 </div>
@@ -1970,7 +1970,7 @@ function claimMember(mid,cb){
     target.uid=uid;
     target._ts=Date.now();
     /* 认领时顺手把成员名字改成我的昵称，除了名字是"成员N"这种默认名才改 */
-    var nick=displayName&&displayName();
+    var nick=currentNickname();
     if(nick&&/^成员\d+$/.test(target.name)){target.name=nick;}
   }
   saveData();
@@ -1984,6 +1984,124 @@ function aliveList(arr){
     if(arr[i]&&!arr[i]._deleted){out.push(arr[i]);}
   }
   return out;
+}
+/* ---------- 预算 ----------
+   默认每天 1000，可以自己改（存 _meta.dailyBudget，随云端同步）。 */
+function getDailyBudget(){
+  var m=(state.data&&state.data._meta)||{};
+  var v=Number(m.dailyBudget);
+  return (v&&v>0)?v:DAILY_BUDGET;
+}
+function setDailyBudget(v){
+  if(!state.data._meta){state.data._meta={};}
+  state.data._meta.dailyBudget=Number(v)||DAILY_BUDGET;
+  state.data._metaTs=Date.now();
+  saveData();
+}
+function editBudget(){
+  var cur=getDailyBudget();
+  showPrompt('修改每日预算','每人每天大概花多少（元）',String(cur),function(v){
+    var n=Number(v);
+    if(!n||n<=0){showToast('请输入大于 0 的数字');return;}
+    setDailyBudget(n);
+    showToast('每日预算已改为 '+fmtMoney(n));
+    renderAll();
+  });
+}
+/* 今日花了多少（只算途中花费） */
+function todaySpent(){
+  var d=viewData(),t=todayStr(),s=0;
+  for(var i=0;i<d.expenses.length;i++){
+    if(d.expenses[i].date===t){s+=Number(d.expenses[i].amount)||0;}
+  }
+  return s;
+}
+/* 预算预警：返回 {level:'ok'|'near'|'over', ...} */
+function budgetAlert(){
+  var budget=getDailyBudget();
+  var members=Math.max(1,aliveMembers().length);
+  var dayBudget=budget*(state.spaceMode==='team'?members:1);
+  var spent=todaySpent();
+  var pct=dayBudget>0?Math.round(spent/dayBudget*100):0;
+  var level='ok';
+  if(pct>100){level='over';}
+  else if(pct>=80){level='near';}
+  return {level:level,pct:pct,spent:spent,dayBudget:dayBudget,
+          budget:budget,members:members,over:spent-dayBudget};
+}
+/* 今日预算提示条 */
+function renderBudgetAlert(){
+  var a=budgetAlert();
+  if(a.level==='ok'&&a.spent===0){return '';}
+  var bg,fg,icon,txt;
+  if(a.level==='over'){
+    bg='#fdecec';fg='#c0392b';icon='🚨';
+    txt='今天超支 '+fmtMoney(a.over)+'（已花 '+fmtMoney(a.spent)+' / 预算 '+fmtMoney(a.dayBudget)+'）';
+  }else if(a.level==='near'){
+    bg='#fff6e5';fg='#b8730a';icon='⚠️';
+    txt='今天快到预算了，已用 '+a.pct+'%（'+fmtMoney(a.spent)+' / '+fmtMoney(a.dayBudget)+'）';
+  }else{
+    bg='#eafaf1';fg='#1e7d52';icon='✅';
+    txt='今天花了 '+fmtMoney(a.spent)+'，还剩 '+fmtMoney(a.dayBudget-a.spent)+' 额度';
+  }
+  return '<div style="display:flex;align-items:center;gap:8px;font-size:0.76rem;background:'+bg+
+    ';color:'+fg+';padding:10px 12px;border-radius:10px;margin-bottom:12px;font-weight:500">'+
+    '<span style="font-size:1rem;flex-shrink:0">'+icon+'</span><span style="flex:1">'+txt+'</span>'+
+    (a.level==='over'
+      ?'<a href="javascript:void(0)" id="askSaveLink" style="color:'+fg+
+        ';font-size:0.68rem;text-decoration:underline;flex-shrink:0;font-weight:600">问AI咋省</a>'
+      :'')+
+    '<a href="javascript:void(0)" id="editBudgetLink" style="color:'+fg+
+    ';font-size:0.68rem;text-decoration:underline;flex-shrink:0;opacity:.75">改预算</a></div>';
+}
+
+/* ---------- 结算快照（已付清）----------
+   存在 _meta.settled = {ts:结算时间, by:操作人昵称, paid:{成员id:当时实付}, owed:{成员id:当时应承担}}
+   结算时只统计 _ts > settled.ts 的账目，已结清的不再重复算。
+   快照随云端同步，所有人看到的结算状态一致。 */
+function getSettled(){
+  var m=(state.data&&state.data._meta)||{};
+  return m.settled||null;
+}
+function setSettled(snap){
+  if(!state.data._meta){state.data._meta={};}
+  if(snap){state.data._meta.settled=snap;}
+  else{delete state.data._meta.settled;}
+  state.data._metaTs=Date.now();
+  saveData();
+}
+/* 标记已结清：把当前算出来的净额存快照 */
+function markSettled(){
+  var r=computeSettlement(viewData());
+  if(!r||!r.transfers.length){showToast('当前没有待结算的金额');return;}
+  var when=new Date();
+  showConfirm('标记已结清',
+    '确认这 '+r.transfers.length+' 笔转账都已经付完了吗？\n\n'+
+    '标记后这些账不再出现在结算清单里，之后新记的账会重新开始算。\n'+
+    '（随时可以撤销）',
+    function(){
+      setSettled({
+        ts:Date.now(),
+        by:currentNickname()||'某人',
+        at:fmtDate(todayStr()),
+        paid:r.paid,
+        owed:r.owed,
+        count:r.transfers.length,
+        total:r.transfers.reduce(function(s,t){return s+t.amt;},0)
+      });
+      showToast('已标记结清');
+      renderAll();
+    });
+}
+/* 撤销结清 */
+function unmarkSettled(){
+  var s=getSettled();
+  if(!s){return;}
+  showConfirm('撤销结清','撤销后之前那笔结算会重新回到清单里，确定吗？',function(){
+    setSettled(null);
+    showToast('已撤销');
+    renderAll();
+  });
 }
 /* 渲染专用视图：剔除所有 _deleted 墓碑条目。
    写操作请继续用 state.data（按 id 查找修改），只有"读来渲染"才用这个。 */
@@ -2936,7 +3054,8 @@ function renderExpense(){
     '<div class="stat-card bad"><div class="label">途中待AA人均</div><div class="value">'+fmtMoney(enPerPerson)+'</div><div class="sub">÷'+headN+'人 · 行程结束结算</div></div>'+
   '</div>';
   /* 工具栏 */
-  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addExpenseBtn">'+svgIcon('plus')+'记一笔</button><button class="btn btn-outline btn-sm" id="exportCsvBtn">'+svgIcon('download')+'导出CSV</button></div>';
+  var alertHtml=renderBudgetAlert();
+  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addExpenseBtn">'+svgIcon('plus')+'记一笔</button><button class="btn btn-outline btn-sm" id="exportCsvBtn">'+svgIcon('download')+'导出CSV</button><button class="btn btn-outline btn-sm" id="aiCheckBtn">✨ 花费体检</button></div>';
   /* 预付大项（只读） */
   var preHtml='<div class="card"><div class="card-title">'+svgIcon('lock')+'预付大项（已支付 · 不可删）</div>';
   for(var pj=0;pj<data.prepaid.length;pj++){
@@ -2975,16 +3094,39 @@ function renderExpense(){
           partBadge='<span class="payer-tag" style="background:#eef6ff;color:#2b6cb0" title="'+
             escapeHtml(pnames.join('、'))+'">仅'+ex.parts.length+'人分</span>';
         }
-        enHtml+='<div class="expense-item"><div class="info"><div class="top"><span class="cat'+(isC?'':' personal')+'">'+(isC?'集体AA':'个人')+'</span><span style="font-size:0.78rem">'+escapeHtml(ex.category)+'</span>'+payerBadge+partBadge+'</div><div style="font-size:0.72rem;color:var(--text-light);margin-top:2px">'+(ex.note?escapeHtml(ex.note):'无备注')+'</div></div><div class="amount">'+fmtMoney(ex.amount)+'</div><div class="del"><button data-action="delExp" data-id="'+ex.id+'">'+svgIcon('trash')+'</button></div></div>';
+        enHtml+='<div class="expense-item"><div class="info"><div class="top"><span class="cat'+(isC?'':' personal')+'">'+(isC?'集体AA':'个人')+'</span><span style="font-size:0.78rem">'+escapeHtml(ex.category)+'</span>'+payerBadge+partBadge+'</div><div style="font-size:0.72rem;color:var(--text-light);margin-top:2px">'+(ex.note?escapeHtml(ex.note):'无备注')+'</div></div><div class="amount">'+fmtMoney(ex.amount)+'</div><div class="del">'+
+          '<button data-action="editExp" data-id="'+ex.id+'" title="修改这笔" style="color:var(--primary)">'+svgIcon('edit')+'</button>'+
+          '<button data-action="delExp" data-id="'+ex.id+'">'+svgIcon('trash')+'</button></div></div>';
       }
       enHtml+='</div>';
     }
   }
   enHtml+='</div>';
-  p.innerHTML=todayHtml+stats+toolbar+preHtml+enHtml;
+  p.innerHTML=alertHtml+todayHtml+stats+toolbar+preHtml+enHtml;
+  var ebl=document.getElementById('editBudgetLink');
+  if(ebl){ebl.onclick=editBudget;}
+  var asl=document.getElementById('askSaveLink');
+  if(asl){asl.onclick=function(){
+    askAI('我们今天超预算了，看看账本里今天都花哪了，接下来几天怎么省着点？给点实际的招。');
+  };}
   /* 事件 */
   var addBtn=document.getElementById('addExpenseBtn');
   if(addBtn){addBtn.onclick=function(){showExpenseForm();};}
+  var edBtns=p.querySelectorAll('[data-action="editExp"]');
+  for(var eb=0;eb<edBtns.length;eb++){
+    edBtns[eb].onclick=function(){
+      var id=this.getAttribute('data-id');
+      var arr=state.data.expenses||[];
+      for(var q=0;q<arr.length;q++){
+        if(arr[q].id===id&&!arr[q]._deleted){showExpenseForm(arr[q]);return;}
+      }
+      showToast('这笔账找不到了');
+    };
+  }
+  var acb=document.getElementById('aiCheckBtn');
+  if(acb){acb.onclick=function(){
+    askAI('帮我看看这个账本，我们花钱有啥问题吗？哪些地方能省？给几条具体的建议，别说空话。');
+  };}
   var csvBtn=document.getElementById('exportCsvBtn');
   if(csvBtn){csvBtn.onclick=function(){exportExpensesCsv();};}
   var delBtns=p.querySelectorAll('[data-action="delExp"]');
@@ -3003,16 +3145,29 @@ function renderExpense(){
   }
 }
 /* 记账表单 */
-function showExpenseForm(){
+function showExpenseForm(item){
+  var editing=!!item;
   var today=todayStr();
   var sheet=document.getElementById('formModalSheet');
   var catOpts='';
-  for(var i=0;i<EXPENSE_CATEGORIES.length;i++){catOpts+='<option>'+EXPENSE_CATEGORIES[i]+'</option>';}
+  var catList=EXPENSE_CATEGORIES.slice();
+  /* 编辑老数据时，原类别可能已不在预设列表里（比如导入的数据）。
+     补进去，不然下拉会静默回落到第一项，一保存就把类别改错了。 */
+  if(item&&item.category){
+    var known=false;
+    for(var ck=0;ck<catList.length;ck++){if(catList[ck]===item.category){known=true;break;}}
+    if(!known){catList.unshift(item.category);}
+  }
+  for(var i=0;i<catList.length;i++){
+    var cn=catList[i];
+    catOpts+='<option'+((item&&item.category===cn)?' selected':'')+'>'+escapeHtml(cn)+'</option>';
+  }
   /* 付款人选项：团队成员列表 */
   var members=aliveMembers();
   var payerOpts='<option value="">— 选择付款人 —</option>';
   for(var m=0;m<members.length;m++){
-    payerOpts+='<option value="'+escapeHtml(members[m].id)+'">'+escapeHtml(members[m].name)+'</option>';
+    payerOpts+='<option value="'+escapeHtml(members[m].id)+'"'+
+      ((item&&item.payer===members[m].id)?' selected':'')+'>'+escapeHtml(members[m].name)+'</option>';
   }
   /* 个人空间默认付款人锁定为"我" */
   var isPersonal=state.spaceMode==='personal';
@@ -3020,6 +3175,13 @@ function showExpenseForm(){
   /* 团队空间：如果我认领了成员，付款人默认选我自己 */
   var mine=myMember();
   var payerDefault=isPersonal?personalPayer:(mine?mine.id:'');
+  /* 编辑模式：各字段回填原值 */
+  if(editing){payerDefault=item.payer||'';}
+  var vDate=editing?(item.date||today):today;
+  var vAmount=editing?(item.amount||''):'';
+  var vCat=editing?(item.category||''):'';
+  var vType=editing?(item.type||'collective'):'collective';
+  var vNote=editing?(item.note||''):'';
   /* 参与人勾选区：默认全选。只有集体AA才用得上 */
   var partHtml='';
   if(!isPersonal&&members.length>1){
@@ -3033,8 +3195,16 @@ function showExpenseForm(){
       '</label>'+
       '<div class="part-grid">';
     for(var pm=0;pm<members.length;pm++){
-      partHtml+='<label class="part-chip"><input type="checkbox" class="fPart" value="'+
-        escapeHtml(members[pm].id)+'" checked><span>'+escapeHtml(members[pm].name)+'</span></label>';
+      /* 编辑模式：原来有 parts 就按它勾，没有 parts 说明是全员，全勾上 */
+      var pchk=true;
+      if(editing&&item.parts&&item.parts.length){
+        pchk=false;
+        for(var pk=0;pk<item.parts.length;pk++){
+          if(item.parts[pk]===members[pm].id){pchk=true;break;}
+        }
+      }
+      partHtml+='<label class="part-chip'+(pchk?' on':'')+'"><input type="checkbox" class="fPart" value="'+
+        escapeHtml(members[pm].id)+'"'+(pchk?' checked':'')+'><span>'+escapeHtml(members[pm].name)+'</span></label>';
     }
     partHtml+='</div>'+
       '<div id="fPartHint" style="font-size:0.68rem;color:var(--text-light);margin-top:4px"></div>'+
@@ -3044,17 +3214,20 @@ function showExpenseForm(){
   var categoryAndTypeRow=isPersonal
     ?'<div class="form-row"><div style="flex:1"><label>类别</label><select id="fCategory">'+catOpts+'</select></div></div>'
     :'<div class="form-row"><div><label>类别</label><select id="fCategory">'+catOpts+'</select></div>'+
-     '<div><label>分摊方式</label><select id="fType"><option value="collective">集体AA（参与均摊）</option><option value="personal">个人物品（不均摊）</option></select></div></div>';
+     '<div><label>分摊方式</label><select id="fType">'+
+       '<option value="collective"'+(vType==='collective'?' selected':'')+'>集体AA（参与均摊）</option>'+
+       '<option value="personal"'+(vType==='personal'?' selected':'')+'>个人物品（不均摊）</option>'+
+     '</select></div></div>';
   var typeHint=isPersonal
     ?'<div style="font-size:0.7rem;color:var(--text-light);margin:-4px 0 8px;padding:6px 10px;background:var(--primary-bg);border-radius:6px;">📌 个人空间内记账均为个人物品，不会上传到团队云端</div>'
     :'';
-  sheet.innerHTML='<div class="form-modal-title">记一笔（'+(isPersonal?'个人空间':'途中花费')+'）<button id="closeForm">✕</button></div>'+
-    '<div class="form-row"><div><label>日期</label><input type="date" id="fDate" value="'+today+'"></div>'+
-    '<div><label>金额 ¥</label><input type="number" id="fAmount" step="0.01" placeholder="0.00"></div></div>'+
+  sheet.innerHTML='<div class="form-modal-title">'+(editing?'修改这笔':'记一笔')+'（'+(isPersonal?'个人空间':'途中花费')+'）<button id="closeForm">✕</button></div>'+
+    '<div class="form-row"><div><label>日期</label><input type="date" id="fDate" value="'+vDate+'"></div>'+
+    '<div><label>金额 ¥</label><input type="number" id="fAmount" step="0.01" placeholder="0.00" value="'+vAmount+'"></div></div>'+
     categoryAndTypeRow+typeHint+
     '<div class="form-row"><div style="flex:1"><label>付款人 '+(isPersonal?'':'（集体AA必填，便于结算）')+'</label><select id="fPayer" '+(isPersonal?'disabled':'')+'>'+payerOpts+'</select></div></div>'+
     partHtml+
-    '<div class="form-row"><div style="flex:1"><label>备注</label><input type="text" id="fNote" placeholder="如：3人午餐，老王没吃"></div></div>'+
+    '<div class="form-row"><div style="flex:1"><label>备注</label><input type="text" id="fNote" placeholder="如：3人午餐，老王没吃" value="'+escapeHtml(vNote)+'"></div></div>'+
     '<button class="btn btn-primary btn-block" style="margin-top:12px" id="saveExpBtn">保存</button>';
   document.getElementById('formModal').classList.add('show');
   document.getElementById('closeForm').onclick=function(){document.getElementById('formModal').classList.remove('show');};
@@ -3129,7 +3302,7 @@ function showExpenseForm(){
   refreshPartHint();
   document.getElementById('saveExpBtn').onclick=function(){
     var exp={
-      id:genId(),
+      id:editing?item.id:genId(),
       date:document.getElementById('fDate').value,
       amount:parseFloat(document.getElementById('fAmount').value)||0,
       category:document.getElementById('fCategory').value,
@@ -3147,12 +3320,220 @@ function showExpenseForm(){
       if(partCbs.length&&!parts.length){showToast('请至少选 1 人参与分摊');return;}
       if(parts.length&&parts.length<members.length){exp.parts=parts;}
     }
-    state.data.expenses.push(exp);saveData();
+    if(editing){
+      /* 改原对象：先清掉可能残留的 parts，再按本次选择写 */
+      var arr=state.data.expenses||[],found=false;
+      for(var ei=0;ei<arr.length;ei++){
+        if(arr[ei].id===exp.id){
+          delete arr[ei].parts;
+          for(var kk in exp){if(exp.hasOwnProperty(kk)){arr[ei][kk]=exp[kk];}}
+          found=true;break;
+        }
+      }
+      if(!found){state.data.expenses.push(exp);}
+    }else{
+      state.data.expenses.push(exp);
+    }
+    saveData();
     document.getElementById('formModal').classList.remove('show');
-    renderExpense();showToast('已记录');
+    renderExpense();showToast(editing?'已修改':'已记录');
   };
 }
 /* 导出 CSV */
+/* ---------- 导出图片 ----------
+   纯 Canvas 手绘，不引第三方库（html2canvas 那种在微信里经常出问题）。
+   2 倍像素密度保证在手机上不糊。画完弹出预览，微信里长按可保存/转发。 */
+function exportSettleImage(){
+  var d=viewData();
+  var R=computeSettlement(d);
+  var members=aliveList(d.members);
+  var budget=getDailyBudget();
+
+  /* 汇总数字 */
+  var preSum=0,i;
+  for(i=0;i<d.prepaid.length;i++){preSum+=Number(d.prepaid[i].amount)||0;}
+  var enC=0,enP=0,byCat={};
+  for(i=0;i<d.expenses.length;i++){
+    var e=d.expenses[i],a=Number(e.amount)||0;
+    if(e.type==='collective'){enC+=a;}else{enP+=a;}
+    byCat[e.category]=(byCat[e.category]||0)+a;
+  }
+  var cats=[];
+  for(var k in byCat){if(byCat.hasOwnProperty(k)){cats.push({n:k,v:byCat[k]});}}
+  cats.sort(function(a,b){return b.v-a.v;});
+  cats=cats.slice(0,5);
+
+  /* 先量高度，避免留白或截断 */
+  var W=750,PAD=40,y=0;
+  var H=200;                                  /* 头部 */
+  H+=150;                                     /* 三个大数字 */
+  if(cats.length){H+=60+cats.length*46;}      /* 分类排行 */
+  if(R&&R.N>=2){
+    H+=70+R.N*44;                             /* 成员表 */
+    H+=R.transfers.length?(60+R.transfers.length*44):60;
+    if(R.settled){H+=56;}
+  }
+  H+=90;                                      /* 页脚 */
+
+  var S=2,c=document.createElement('canvas');
+  c.width=W*S;c.height=H*S;
+  var g=c.getContext('2d');
+  g.scale(S,S);
+  g.textBaseline='top';
+  var F='-apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+
+  function txt(s,x,yy,size,color,weight,align){
+    g.font=(weight||'400')+' '+size+'px '+F;
+    g.fillStyle=color||'#2d3436';
+    g.textAlign=align||'left';
+    g.fillText(String(s),x,yy);
+  }
+  function rrect(x,yy,w,h,r,fill){
+    g.beginPath();
+    g.moveTo(x+r,yy);g.lineTo(x+w-r,yy);g.quadraticCurveTo(x+w,yy,x+w,yy+r);
+    g.lineTo(x+w,yy+h-r);g.quadraticCurveTo(x+w,yy+h,x+w-r,yy+h);
+    g.lineTo(x+r,yy+h);g.quadraticCurveTo(x,yy+h,x,yy+h-r);
+    g.lineTo(x,yy+r);g.quadraticCurveTo(x,yy,x+r,yy);
+    g.closePath();g.fillStyle=fill;g.fill();
+  }
+  function line(yy){
+    g.beginPath();g.moveTo(PAD,yy);g.lineTo(W-PAD,yy);
+    g.strokeStyle='#eee';g.lineWidth=1;g.stroke();
+  }
+  function money(v){return '¥'+(Number(v)||0).toFixed(2);}
+
+  /* 背景 */
+  g.fillStyle='#fff';g.fillRect(0,0,W,H);
+
+  /* 头部渐变 */
+  var grd=g.createLinearGradient(0,0,W,150);
+  grd.addColorStop(0,'#4a90d9');grd.addColorStop(1,'#67b8a4');
+  g.fillStyle=grd;g.fillRect(0,0,W,150);
+  var title=(state.spaceMode==='team'
+    ?((auth&&auth.currentWs&&auth.currentWs.name)||'团队账本')
+    :'我的个人账本');
+  txt(title,PAD,38,34,'#fff','700');
+  txt(TRIP_START+' ~ '+TRIP_END+'  ·  '+members.length+' 人',PAD,88,17,'rgba(255,255,255,.9)');
+  txt('导出于 '+fmtDate(todayStr()),W-PAD,92,14,'rgba(255,255,255,.75)','400','right');
+  y=150;
+
+  /* 三个大数字 */
+  y+=28;
+  var bw=(W-PAD*2-20)/3;
+  var boxes=[['预付款',preSum,'#4a90d9'],['途中AA',enC,'#67b8a4'],['个人花费',enP,'#e8a44a']];
+  for(i=0;i<3;i++){
+    var bx=PAD+i*(bw+10);
+    rrect(bx,y,bw,96,12,'#f8f9fa');
+    txt(boxes[i][0],bx+bw/2,y+18,15,'#8a9199','400','center');
+    txt(money(boxes[i][1]),bx+bw/2,y+46,23,boxes[i][2],'700','center');
+  }
+  y+=96+26;
+
+  /* 分类排行 */
+  if(cats.length){
+    txt('花费构成',PAD,y,19,'#2d3436','700');y+=32;
+    var maxV=cats[0].v||1;
+    for(i=0;i<cats.length;i++){
+      var barW=Math.max(4,Math.round((W-PAD*2-210)*cats[i].v/maxV));
+      txt(cats[i].n,PAD,y+6,16,'#555');
+      rrect(PAD+95,y+8,barW,14,7,'#4a90d9');
+      txt(money(cats[i].v),W-PAD,y+5,16,'#2d3436','600','right');
+      y+=46;
+    }
+    y+=14;
+  }
+
+  /* AA 结算 */
+  if(R&&R.N>=2){
+    line(y);y+=22;
+    txt('AA 结算',PAD,y,19,'#2d3436','700');y+=34;
+    if(R.settled){
+      rrect(PAD,y,W-PAD*2,40,8,'#eafaf1');
+      txt('✅ '+(R.settled.at||'')+' 已结清 '+(R.settled.count||0)+' 笔 / '+money(R.settled.total||0),
+          PAD+14,y+12,15,'#1e7d52','600');
+      y+=56;
+    }
+    /* 表头 */
+    txt('成员',PAD,y,14,'#8a9199');
+    txt('实付',PAD+250,y,14,'#8a9199','400','right');
+    txt('应承担',PAD+420,y,14,'#8a9199','400','right');
+    txt('净额',W-PAD,y,14,'#8a9199','400','right');
+    y+=26;
+    for(i=0;i<R.N;i++){
+      var m=R.members[i],n=R.net[m.id];
+      if(i%2===0){rrect(PAD-8,y-6,W-PAD*2+16,40,6,'#fafbfc');}
+      txt(m.name,PAD,y+4,16,'#2d3436','600');
+      txt(money(R.paid[m.id]),PAD+250,y+4,15,'#555','400','right');
+      txt(money(R.owed[m.id]),PAD+420,y+4,15,'#555','400','right');
+      var nc=n>0.01?'#1e7d52':(n<-0.01?'#c0392b':'#8a9199');
+      var nl=n>0.01?' 应收':(n<-0.01?' 应付':' 已平');
+      txt(money(Math.abs(n))+nl,W-PAD,y+4,15,nc,'600','right');
+      y+=44;
+    }
+    y+=18;
+    /* 转账清单 */
+    if(R.transfers.length){
+      txt('谁给谁',PAD,y,17,'#2d3436','700');y+=32;
+      for(i=0;i<R.transfers.length;i++){
+        var t=R.transfers[i];
+        rrect(PAD,y-4,W-PAD*2,38,8,'#fff6e5');
+        txt(t.from+'  →  '+t.to,PAD+14,y+6,16,'#b8730a','600');
+        txt(money(t.amt),W-PAD-14,y+6,17,'#c0392b','700','right');
+        y+=44;
+      }
+    }else{
+      rrect(PAD,y,W-PAD*2,40,8,'#eafaf1');
+      txt('✅ '+(R.settled?'已结清，无新增待结算':'所有人已平衡，无需结算'),PAD+14,y+12,15,'#1e7d52','600');
+      y+=60;
+    }
+  }
+
+  /* 页脚 */
+  y=H-60;
+  line(y-14);
+  txt('青甘环线记账 · 每日预算 '+money(budget),PAD,y,13,'#b2bec3');
+  txt('htwo666.github.io/qinggan-trip-ledger',W-PAD,y,13,'#b2bec3','400','right');
+
+  /* 弹预览 */
+  try{
+    var url=c.toDataURL('image/png');
+    showImagePreview(url);
+  }catch(err){
+    showToast('生成图片失败：'+(err.message||err));
+  }
+}
+
+/* 图片预览弹窗：微信里长按可保存/转发，电脑上给个下载按钮 */
+function showImagePreview(url){
+  var old=document.getElementById('imgPreviewMask');
+  if(old){old.parentNode.removeChild(old);}
+  var mask=document.createElement('div');
+  mask.id='imgPreviewMask';
+  mask.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;'+
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+  mask.innerHTML=
+    '<div style="color:#fff;font-size:0.82rem;margin-bottom:10px;text-align:center;line-height:1.6">'+
+      '长按图片即可保存 / 转发到微信<br>'+
+      '<span style="opacity:.65;font-size:0.74rem">电脑上点下面的下载按钮</span></div>'+
+    '<img src="'+url+'" style="max-width:100%;max-height:72vh;border-radius:10px;'+
+      'box-shadow:0 8px 32px rgba(0,0,0,.4)">'+
+    '<div style="display:flex;gap:10px;margin-top:14px">'+
+      '<a id="imgDl" href="'+url+'" download="账单_'+todayStr()+'.png" '+
+        'style="background:#fff;color:#2d3436;padding:10px 22px;border-radius:20px;'+
+        'font-size:0.86rem;font-weight:600;text-decoration:none">下载图片</a>'+
+      '<button id="imgClose" style="background:rgba(255,255,255,.2);color:#fff;border:none;'+
+        'padding:10px 22px;border-radius:20px;font-size:0.86rem;cursor:pointer">关闭</button>'+
+    '</div>';
+  document.body.appendChild(mask);
+  document.getElementById('imgClose').onclick=function(){
+    mask.parentNode&&mask.parentNode.removeChild(mask);
+  };
+  mask.onclick=function(ev){
+    if(ev.target===mask){mask.parentNode&&mask.parentNode.removeChild(mask);}
+  };
+  showToast('图片已生成');
+}
+
 function exportExpensesCsv(){
   var data=viewData();
   var rows='类型,日期,类别,金额,分摊,备注\n';
@@ -3412,12 +3793,16 @@ function showTodoForm(){
      这样转账笔数最少（n 个人最多 n-1 笔，而不是两两结算的 n(n-1)/2 笔）
    - 已平衡的人（净额≈0）不出现在转账清单里，不用白折腾
 */
-function renderSettlement(data){
+/* 纯计算：返回 {members,N,paid,owed,net,transfers,hasUnequal,hasPayerRecords,
+                 collectiveTotal,settled,coveredCount}
+   已标记结清时，会减去快照里的基线，只算快照之后新增的账。 */
+function computeSettlement(data){
   var members=aliveList(data.members);
   var expenses=data.expenses||[];
   var N=members.length;
-  if(N<2){return '';}
-  var i,payer,payerName;
+  if(N<2){return null;}
+  var i,j;
+  var settled=(data._meta&&data._meta.settled)||null;
   /* 1. 统计每人实付总额 */
   var paid={};
   for(i=0;i<N;i++){paid[members[i].id]=0;}
@@ -3440,7 +3825,7 @@ function renderSettlement(data){
     if(e2.type==='collective'){
       collectiveTotal+=amt2;
       /* parts 为空 = 全员参与（兼容老数据）；有 parts = 只在这些人之间分 */
-      var pl=[],j;
+      var pl=[];
       if(e2.parts&&e2.parts.length){
         for(j=0;j<e2.parts.length;j++){
           if(owed.hasOwnProperty(e2.parts[j])){pl.push(e2.parts[j]);}
@@ -3458,14 +3843,65 @@ function renderSettlement(data){
       }
     }
   }
+  /* 2.5 已结清基线：减掉快照里那部分，只算之后新增的
+     这样"已经付过的钱"不会每次打开又被算一遍 */
+  var coveredCount=0,coveredTotal=0;
+  if(settled){
+    coveredCount=settled.count||0;
+    coveredTotal=settled.total||0;
+    for(i=0;i<N;i++){
+      var mid=members[i].id;
+      if(settled.paid&&settled.paid.hasOwnProperty(mid)){paid[mid]-=(Number(settled.paid[mid])||0);}
+      if(settled.owed&&settled.owed.hasOwnProperty(mid)){owed[mid]-=(Number(settled.owed[mid])||0);}
+    }
+  }
   /* 3. 计算每人净额（实付 - 应承担） */
   var net={};
   for(i=0;i<N;i++){
-    var mid=members[i].id;
-    net[mid]=paid[mid]-owed[mid];
+    var mid2=members[i].id;
+    net[mid2]=paid[mid2]-owed[mid2];
   }
-  /* 4. 输出统计概览卡片 */
+  /* 4. 贪心匹配生成结算清单（谁给谁多少，转账次数最少） */
+  var receivables=[],payables=[];
+  for(i=0;i<N;i++){
+    var m2=members[i];
+    if(net[m2.id]>0.01){receivables.push({id:m2.id,name:m2.name,amt:net[m2.id]});}
+    else if(net[m2.id]<-0.01){payables.push({id:m2.id,name:m2.name,amt:-net[m2.id]});}
+  }
+  receivables.sort(function(a,b){return b.amt-a.amt;});
+  payables.sort(function(a,b){return b.amt-a.amt;});
+  var transfers=[],ri=0,pi2=0;
+  while(ri<receivables.length&&pi2<payables.length){
+    var r=receivables[ri],py=payables[pi2];
+    var xfer=Math.min(r.amt,py.amt);
+    if(xfer>0.01){transfers.push({from:py.name,to:r.name,amt:xfer});}
+    r.amt-=xfer;py.amt-=xfer;
+    if(r.amt<0.01){ri++;}
+    if(py.amt<0.01){pi2++;}
+  }
+  return {members:members,N:N,paid:paid,owed:owed,net:net,transfers:transfers,
+          hasUnequal:hasUnequal,hasPayerRecords:hasPayerRecords,
+          collectiveTotal:collectiveTotal,settled:settled,
+          coveredCount:coveredCount,coveredTotal:coveredTotal};
+}
+
+function renderSettlement(data){
+  var R=computeSettlement(data);
+  if(!R){return '';}
+  var members=R.members,N=R.N,paid=R.paid,owed=R.owed,net=R.net;
+  var transfers=R.transfers,hasUnequal=R.hasUnequal,settled=R.settled;
+  var hasPayerRecords=R.hasPayerRecords,collectiveTotal=R.collectiveTotal;
+  var i;
   var settleHtml='<div class="card"><div class="card-title">'+svgIcon('users')+'AA 结算助手</div>';
+  /* 已结清横幅 */
+  if(settled){
+    settleHtml+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;'+
+      'font-size:0.74rem;background:#eafaf1;color:#1e7d52;padding:9px 11px;border-radius:8px;margin-bottom:10px">'+
+      '<span>✅ '+escapeHtml(settled.at||'')+' 由 '+escapeHtml(settled.by||'某人')+
+      ' 标记已结清（'+(settled.count||0)+' 笔 / '+fmtMoney(settled.total||0)+'）'+
+      (transfers.length?'，下面是之后新增的账':'')+'</span>'+
+      '<button class="btn btn-outline btn-sm" id="unsettleBtn" style="flex-shrink:0;padding:3px 9px;font-size:0.68rem">撤销</button></div>';
+  }
   if(!hasPayerRecords&&collectiveTotal>0){
     settleHtml+='<div style="font-size:0.76rem;color:var(--accent);background:#fff6ea;padding:8px 10px;border-radius:8px;margin-bottom:10px;border:1px dashed var(--accent);">⚠ 老数据缺少付款人信息，下方结算按"集体均摊"估算。新记账时请选付款人，结算更精确。</div>';
   }
@@ -3486,31 +3922,10 @@ function renderSettlement(data){
       '</td><td>'+fmtMoney(paid[m.id])+'</td><td>'+fmtMoney(owed[m.id])+'</td><td class="'+netCls+'"><strong>'+fmtMoney(Math.abs(n))+'</strong> <span style="font-size:0.68rem;color:var(--text-light)">'+netLabel+'</span></td></tr>';
   }
   settleHtml+='</tbody></table></div>';
-  /* 6. 贪心算法生成结算清单（谁给谁多少） */
-  var receivables=[],payables=[];
-  for(i=0;i<N;i++){
-    var m2=members[i];
-    if(net[m2.id]>0.01){receivables.push({id:m2.id,name:m2.name,amt:net[m2.id]});}
-    else if(net[m2.id]<-0.01){payables.push({id:m2.id,name:m2.name,amt:-net[m2.id]});}
-  }
-  /* 排序：金额大的先匹配 */
-  receivables.sort(function(a,b){return b.amt-a.amt;});
-  payables.sort(function(a,b){return b.amt-a.amt;});
-  var transfers=[];
-  var ri=0,pi2=0;
-  while(ri<receivables.length&&pi2<payables.length){
-    var r=receivables[ri],py=payables[pi2];
-    var xfer=Math.min(r.amt,py.amt);
-    if(xfer>0.01){
-      transfers.push({from:py.name,to:r.name,amt:xfer});
-    }
-    r.amt-=xfer;py.amt-=xfer;
-    if(r.amt<0.01){ri++;}
-    if(py.amt<0.01){pi2++;}
-  }
-  /* 7. 输出结算清单 */
+  /* 输出结算清单 */
   if(transfers.length===0){
-    settleHtml+='<div class="empty" style="padding:14px">'+svgIcon('check')+'<div>所有人已平衡，无需结算</div></div>';
+    settleHtml+='<div class="empty" style="padding:14px">'+svgIcon('check')+'<div>'+
+      (settled?'已结清，之后没有新增待结算的账':'所有人已平衡，无需结算')+'</div></div>';
   }else{
     settleHtml+='<div style="font-size:0.82rem;font-weight:600;color:var(--primary-dark);margin:14px 0 6px;padding-left:4px;border-left:3px solid var(--primary-light)">建议结算方案</div>';
     settleHtml+='<div class="table-wrap"><table><thead><tr><th>付款方</th><th>→</th><th>收款方</th><th>金额</th></tr></thead><tbody>';
@@ -3520,6 +3935,11 @@ function renderSettlement(data){
     }
     settleHtml+='</tbody></table></div>';
     settleHtml+='<div style="font-size:0.72rem;color:var(--text-light);margin-top:8px">💡 共 '+transfers.length+' 笔结算，总流转金额 '+fmtMoney(transfers.reduce(function(s,t2){return s+t2.amt;},0))+'</div>';
+    /* 付完了点一下，之后不再重复计算这部分 */
+    if(state.spaceMode==='team'){
+      settleHtml+='<div style="margin-top:10px"><button class="btn btn-primary btn-sm" id="settleBtn" style="width:100%">'+
+        svgIcon('check')+'这些都付完了，标记结清</button></div>';
+    }
   }
   /* 8. 个人空间提示 */
   if(state.spaceMode==='personal'){
@@ -3567,7 +3987,7 @@ function renderSummary(){
     '<div style="font-size:0.78rem;color:var(--text-light);margin-top:8px">已用 '+budgetProg+'%'+(budgetProg>100?'，超支 '+fmtMoney(totalSpent-totalDailyBudget):'，剩余 '+fmtMoney(totalDailyBudget-totalSpent))+'</div>'+
     '</div>';
   /* 工具栏 */
-  var toolbar='<div class="toolbar"><button class="btn btn-outline btn-sm" id="exportJsonBtn">'+svgIcon('download')+'导出JSON</button><button class="btn btn-outline btn-sm" id="importJsonBtn">'+svgIcon('upload')+'导入恢复</button><button class="btn btn-danger btn-sm" id="clearAllBtn">'+svgIcon('trash')+'清空数据</button></div>';
+  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="exportImgBtn">'+svgIcon('download')+'导出图片发群</button><button class="btn btn-outline btn-sm" id="aiReadBtn">✨ AI 解读账单</button><button class="btn btn-outline btn-sm" id="exportJsonBtn">'+svgIcon('download')+'导出JSON</button><button class="btn btn-outline btn-sm" id="importJsonBtn">'+svgIcon('upload')+'导入恢复</button><button class="btn btn-danger btn-sm" id="clearAllBtn">'+svgIcon('trash')+'清空数据</button></div>';
   /* 饼图：支出分类（途中花费） */
   var pieHtml='<div class="chart-wrap"><div class="chart-title">途中支出分类饼图</div>'+drawPieChart(byCat)+'</div>';
   /* 柱状图：每日支出 */
@@ -3586,6 +4006,16 @@ function renderSummary(){
   var settlementHtml=renderSettlement(data);
   p.innerHTML=stats+budgetHtml+toolbar+pieHtml+barHtml+aaHtml+settlementHtml;
   /* 事件 */
+  var sb=document.getElementById('settleBtn');
+  if(sb){sb.onclick=markSettled;}
+  var usb=document.getElementById('unsettleBtn');
+  if(usb){usb.onclick=unmarkSettled;}
+  var imgb=document.getElementById('exportImgBtn');
+  if(imgb){imgb.onclick=exportSettleImage;}
+  var arb=document.getElementById('aiReadBtn');
+  if(arb){arb.onclick=function(){
+    askAI('用大白话解读一下我们这次的账单：钱主要花在哪、有没有异常的花销、和一般青甘环线的花费比算多还是少、结算清单看着合理吗。');
+  };}
   document.getElementById('exportJsonBtn').onclick=exportAllJson;
   document.getElementById('importJsonBtn').onclick=importAllJson;
   document.getElementById('clearAllBtn').onclick=function(){
@@ -3687,7 +4117,29 @@ function importAllJson(){
    确认弹窗
    ============================================================ */
 var confirmCallback=null;
+/* 输入型弹窗：复用 confirm 弹窗的结构，往 body 里塞个 input */
+function showPrompt(title,label,defVal,cb){
+  var body=document.getElementById('confirmBody');
+  document.getElementById('confirmTitle').textContent=title;
+  body.innerHTML='<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:8px">'+
+    escapeHtml(label)+'</div>'+
+    '<input type="number" id="promptInput" value="'+escapeHtml(String(defVal||''))+'" '+
+    'style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:1rem;box-sizing:border-box">';
+  confirmCallback=function(){
+    var el=document.getElementById('promptInput');
+    var v=el?el.value:'';
+    /* 用完把 body 还原成纯文本容器，不然下次 showConfirm 会残留输入框 */
+    body.innerHTML='';
+    cb&&cb(v);
+  };
+  document.getElementById('confirmModal').classList.add('show');
+  setTimeout(function(){
+    var el=document.getElementById('promptInput');
+    if(el){el.focus();el.select();}
+  },100);
+}
 function showConfirm(title,body,cb){
+  document.getElementById('confirmBody').innerHTML='';
   document.getElementById('confirmTitle').textContent=title;
   document.getElementById('confirmBody').textContent=body;
   confirmCallback=cb;
@@ -3783,6 +4235,82 @@ var aiState={
 };
 
 /* 构建系统提示词：行程感知 + 当前位置 + 空间模式 */
+/* 把真实账本浓缩成文字喂给 AI。
+   原来 AI 只知道行程不知道账，用户问"超支了吗""还能花多少"只能瞎编。
+   控制在几百字，不然每次请求都烧 token。 */
+function buildLedgerContext(){
+  var d=viewData();
+  var members=aliveList(d.members);
+  var budget=getDailyBudget();
+  var i,s='';
+
+  var preSum=0;
+  for(i=0;i<d.prepaid.length;i++){preSum+=Number(d.prepaid[i].amount)||0;}
+  var enC=0,enP=0,byCat={},byDate={};
+  for(i=0;i<d.expenses.length;i++){
+    var e=d.expenses[i],a=Number(e.amount)||0;
+    if(e.type==='collective'){enC+=a;}else{enP+=a;}
+    byCat[e.category]=(byCat[e.category]||0)+a;
+    if(e.date){byDate[e.date]=(byDate[e.date]||0)+a;}
+  }
+
+  s+='\n【当前账本实况】（这是真实数据，回答花钱相关问题请基于它）\n';
+  s+='- 成员（'+members.length+' 人）：';
+  var mn=[];
+  for(i=0;i<members.length;i++){mn.push(members[i].name);}
+  s+=mn.join('、')+'\n';
+  s+='- 预付款已花：'+fmtMoney(preSum)+'（机票/租车/住宿这类出发前付的）\n';
+  s+='- 途中集体AA：'+fmtMoney(enC)+'；途中个人花费：'+fmtMoney(enP)+'\n';
+  s+='- 总计已花：'+fmtMoney(preSum+enC+enP)+'\n';
+  s+='- 每日预算设定：每人每天 '+fmtMoney(budget)+'\n';
+
+  /* 分类排行 */
+  var cats=[];
+  for(var k in byCat){if(byCat.hasOwnProperty(k)){cats.push([k,byCat[k]]);}}
+  cats.sort(function(a,b){return b[1]-a[1];});
+  if(cats.length){
+    var cs=[];
+    for(i=0;i<Math.min(5,cats.length);i++){cs.push(cats[i][0]+' '+fmtMoney(cats[i][1]));}
+    s+='- 花得最多的类别：'+cs.join('，')+'\n';
+  }
+
+  /* 今日 */
+  var a2=budgetAlert();
+  s+='- 今天（'+todayStr()+'）已花 '+fmtMoney(a2.spent)+'，今日额度 '+fmtMoney(a2.dayBudget)+
+     '，用了 '+a2.pct+'%'+(a2.level==='over'?'（已超支 '+fmtMoney(a2.over)+'）':'')+'\n';
+
+  /* 结算状态 */
+  var R=computeSettlement(d);
+  if(R){
+    if(R.settled){
+      s+='- 结算：'+(R.settled.at||'')+' 已标记结清（'+(R.settled.count||0)+' 笔 / '+
+         fmtMoney(R.settled.total||0)+'）';
+      s+=R.transfers.length?('，之后新增 '+R.transfers.length+' 笔待结\n'):'，之后没有新账\n';
+    }
+    if(R.transfers.length){
+      var ts=[];
+      for(i=0;i<R.transfers.length;i++){
+        ts.push(R.transfers[i].from+'给'+R.transfers[i].to+' '+fmtMoney(R.transfers[i].amt));
+      }
+      s+='- 待结算：'+ts.join('；')+'\n';
+    }else if(!R.settled){
+      s+='- 待结算：大家已平衡，不用互相转账\n';
+    }
+  }
+
+  /* 最近 5 笔，让 AI 有具体的话可说 */
+  if(d.expenses.length){
+    var recent=d.expenses.slice(-5).reverse(),rs=[];
+    for(i=0;i<recent.length;i++){
+      var r2=recent[i];
+      rs.push(r2.date+' '+r2.category+' '+fmtMoney(r2.amount)+
+              (r2.parts&&r2.parts.length?'(仅'+r2.parts.length+'人分)':''));
+    }
+    s+='- 最近几笔：'+rs.join('；')+'\n';
+  }
+  return s;
+}
+
 function buildAISystemPrompt(){
   var today=todayStr();
   var toStart=daysBetween(today,TRIP_START);
@@ -3806,9 +4334,14 @@ function buildAISystemPrompt(){
   else if(toStart===0){tripPhase='今天就是出发日！';}
   else if(toEnd>=0){tripPhase='行程进行中，今天是第 '+(Math.abs(toStart)+1)+' 天，还剩 '+toEnd+' 天返程';}
   else{tripPhase='行程已结束（'+TRIP_START+' 至 '+TRIP_END+'）';}
-  var prompt='你是"青甘旅伴"，一个为4人11天青甘大环线自驾游设计的AI助手。\n\n'+
+  var mList=aliveMembers(),mNames=[];
+  for(var mi=0;mi<mList.length;mi++){mNames.push(mList[mi].name);}
+  var nPeople=Math.max(1,mList.length);
+  var nDays=Math.abs(daysBetween(TRIP_START,TRIP_END))+1;
+  var prompt='你是"青甘旅伴"，一个为'+nPeople+'人'+nDays+'天青甘大环线自驾游设计的AI助手。\n\n'+
     '【行程信息】\n'+
-    '- 时间：2026-09-25 至 2026-10-05，4 人自驾（小美、阿杰、丸子、老王）\n'+
+    '- 时间：'+TRIP_START+' 至 '+TRIP_END+'，'+nPeople+' 人自驾'+
+    (mNames.length?'（'+mNames.join('、')+'）':'')+'\n'+
     '- 状态：'+tripPhase+'\n';
   if(todayRoute){
     prompt+='- 今天（'+today+'）：D'+todayRoute.day+'，路线 '+todayRoute.route+'，城市 '+todayRoute.city+'，住 '+todayRoute.stay+'\n';
@@ -3826,13 +4359,23 @@ function buildAISystemPrompt(){
   }else{
     prompt+='\n【空间模式】用户当前在"团队空间"（'+Math.max(1,aliveMembers().length)+' 人共享记账），多人协作同步。可适当提醒AA结算、分工等团队场景。\n';
   }
+  /* 真实账本数据 */
+  prompt+=buildLedgerContext();
   prompt+='\n【能力】\n'+
     '1. 行程规划与建议：基于11天青甘大环线行程（兰州→西宁→祁连→张掖→敦煌→察尔汗→大柴旦→德令哈→茶卡→青海湖→西宁→兰州）\n'+
     '2. 当地美食、景点、住宿推荐\n'+
     '3. 穿搭建议（结合每日天气）\n'+
-    '4. 记账与预算贴士、AA 结算建议\n'+
-    '5. 闲聊逗闷子、讲笑话、缓解旅途疲惫\n'+
-    '6. 高原反应、安全提示\n\n'+
+    '4. 记账与预算贴士、AA 结算建议（你能看到真实账本，请基于实际数字回答，别编数字）\n'+
+    '5. 帮用户记账：用户说"午饭花了120""加油300老王没去"这类话时，'+
+      '你要回一个记账指令，格式严格如下（单独一行，前后不要加代码块标记）：\n'+
+      '@@RECORD{"amount":120,"category":"餐饮","type":"collective","note":"午饭","exclude":["老王"]}\n'+
+      '  - amount 必填数字；category 从 '+EXPENSE_CATEGORIES.join('/')+' 里挑最接近的\n'+
+      '  - type：大家一起花的用 collective，某人自己买的用 personal\n'+
+      '  - exclude 可选，填没参与的人的名字（用户说"某人没去/没吃"时）\n'+
+      '  - 指令那一行之外，再用一句话跟用户确认，比如"记好了，午饭120，老王没参与"\n'+
+      '  - 用户只是闲聊或问问题时，不要输出这个指令\n'+
+    '6. 闲聊逗闷子、讲笑话、缓解旅途疲惫\n'+
+    '7. 高原反应、安全提示\n\n'+
     '【回复风格】\n'+
     '- 使用中文，简洁有用，必要时用列表和加粗\n'+
     '- 不知道实时数据时（如当天具体天气、门票价格），明确告知建议查询最新信息\n'+
@@ -4003,6 +4546,91 @@ function setAIStatus(text,thinking){
   el.className='ai-status'+(thinking?' thinking':'');
 }
 /* 发送消息 */
+/* 打开 AI 面板并自动问一个问题（各页面的 AI 快捷入口都走这个） */
+function askAI(question){
+  openAIPanel();
+  setTimeout(function(){sendAIMessage(question);},350);
+}
+
+/* ---------- AI 自然语言记账 ----------
+   AI 回复里带 @@RECORD{...} 时，解析成账目，弹确认框让用户过一眼再入账。
+   不自动入账，因为 AI 偶尔会把金额听错，让用户确认一下更安全。 */
+function parseAIRecord(text){
+  if(!text||text.indexOf('@@RECORD')<0){return null;}
+  var i=text.indexOf('@@RECORD');
+  var start=text.indexOf('{',i);
+  if(start<0){return null;}
+  /* 手动找配对的右括号（JSON 里可能有嵌套） */
+  var depth=0,end=-1;
+  for(var j=start;j<text.length;j++){
+    if(text[j]==='{'){depth++;}
+    else if(text[j]==='}'){depth--;if(depth===0){end=j;break;}}
+  }
+  if(end<0){return null;}
+  try{
+    var o=JSON.parse(text.slice(start,end+1));
+    if(!o||!(Number(o.amount)>0)){return null;}
+    return {obj:o,raw:text.slice(i,end+1)};
+  }catch(e){return null;}
+}
+/* 把 AI 解析出的对象转成真正的账目并确认入账 */
+function confirmAIRecord(o){
+  var members=aliveMembers();
+  var isPersonal=state.spaceMode==='personal';
+  var amount=Number(o.amount)||0;
+  var cat=o.category||'其他';
+  /* 类别兜底到合法值 */
+  var okCat=false,ci;
+  for(ci=0;ci<EXPENSE_CATEGORIES.length;ci++){
+    if(EXPENSE_CATEGORIES[ci]===cat){okCat=true;break;}
+  }
+  if(!okCat){cat='其他';}
+  var type=(o.type==='personal'||isPersonal)?'personal':'collective';
+  var mine=myMember();
+  var payer=isPersonal?(members.length?members[0].id:''):(mine?mine.id:(members.length?members[0].id:''));
+
+  /* exclude 里的名字 → parts（排除这些人） */
+  var parts=null,excluded=[];
+  if(type==='collective'&&o.exclude&&o.exclude.length&&members.length>1){
+    parts=[];
+    for(var mi=0;mi<members.length;mi++){
+      var skip=false;
+      for(var xi=0;xi<o.exclude.length;xi++){
+        if(members[mi].name===String(o.exclude[xi]).trim()){skip=true;excluded.push(members[mi].name);break;}
+      }
+      if(!skip){parts.push(members[mi].id);}
+    }
+    if(!parts.length||parts.length===members.length){parts=null;excluded=[];}
+  }
+
+  var payerName=payer?memberNameById(payer):'未指定';
+  var body='金额：'+fmtMoney(amount)+'\n'+
+    '类别：'+cat+'\n'+
+    '方式：'+(type==='collective'?'集体AA':'个人物品')+'\n'+
+    '付款人：'+payerName+'\n'+
+    (parts?('参与分摊：'+parts.length+' 人（'+excluded.join('、')+' 不参与）\n'):'')+
+    (o.note?('备注：'+o.note+'\n'):'')+
+    '\n确认记这一笔吗？';
+
+  showConfirm('AI 帮你记一笔',body,function(){
+    var exp={
+      id:genId(),
+      date:todayStr(),
+      amount:amount,
+      category:cat,
+      type:type,
+      payer:payer,
+      note:o.note||'AI 记账',
+      _ts:Date.now()
+    };
+    if(parts){exp.parts=parts;}
+    state.data.expenses.push(exp);
+    saveData();
+    showToast('已记入账本');
+    renderAll();
+  });
+}
+
 function sendAIMessage(text){
   if(aiState.isStreaming){showToast('AI 正在回复中...');return;}
   text=(text||'').trim();
@@ -4035,6 +4663,13 @@ function sendAIMessage(text){
       aiState.abortController=null;
       setAIStatus('在线 · DeepSeek',false);
       document.getElementById('aiSendBtn').disabled=false;
+      /* AI 想帮记账：把指令从显示里抹掉，然后弹确认 */
+      var rec=parseAIRecord(fullText);
+      if(rec){
+        var clean=fullText.replace(rec.raw,'').replace(/\n{3,}/g,'\n\n').trim();
+        updateLastAIMessage(clean||'我帮你记一笔（见下方确认框）');
+        setTimeout(function(){confirmAIRecord(rec.obj);},400);
+      }
       saveAIHistory();
     },
     function(err){
