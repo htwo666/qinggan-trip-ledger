@@ -303,6 +303,16 @@ body.space-personal .expense-item .payer-tag{background:#fff3e0;color:#8a5a1a;bo
 .todo-item.done .text{text-decoration:line-through;color:var(--text-light);}
 .todo-item .del-todo{border:none;background:transparent;cursor:pointer;color:var(--text-light);padding:2px;font-family:inherit;}
 .todo-item .del-todo svg{width:14px;height:14px;}
+/* 计划：创建者标签 + 左侧色条（一眼看出谁加的） */
+.plan-by{display:inline-block;font-size:0.66rem;padding:1px 6px;border-radius:8px;margin-left:4px;border:1px solid;white-space:nowrap;}
+.todo-item.plan{border-left:4px solid var(--border);padding-left:8px;}
+.owner-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.owner-chip{display:inline-flex;align-items:center;font-size:0.78rem;padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;user-select:none;}
+.owner-chip input{display:none;}
+.owner-chip.on{font-weight:600;}
+.plan-range{display:inline-block;font-size:0.66rem;padding:1px 6px;border-radius:8px;margin-left:4px;background:var(--primary-bg);color:var(--primary-dark);white-space:nowrap;}
+/* 日历里跨天计划的连续条 */
+.cal-day .day-bar{display:block;height:3px;border-radius:2px;margin-top:1px;}
 /* ========== 弹窗 ========== */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:260;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.show{display:flex;}
@@ -910,6 +920,14 @@ function fmtMoney(n){n=Number(n)||0;return '¥'+n.toFixed(2);}
 function fmtDate(d){var p=d.split('-');return p[1]+'月'+p[2]+'日';}
 function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function daysBetween(a,b){var da=new Date(a),db=new Date(b);return Math.round((db-da)/86400000);}
+/* 日期加减：'2026-09-30' +1 → '2026-10-01'（自动跨月跨年，不用自己算月末） */
+function addDays(ds,n){
+  var p=String(ds).split('-');
+  if(p.length!==3){return ds;}
+  var d=new Date(parseInt(p[0],10),parseInt(p[1],10)-1,parseInt(p[2],10));
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
 /* ========== SVG 图标 ========== */
@@ -1917,6 +1935,16 @@ function normalizeData(d,isPersonal,isExisting){
   if(!d.prepItems){d.prepItems=[];}
   if(!d.outfits){d.outfits=[];}
   if(!d.todos){d.todos=[];}
+  /* 计划字段迁移：老待办只有 date + 单个 owner，这里补出区间和多人字段。
+     只补不改，老字段原样留着，万一用户还有旧设备在用也不会读崩。 */
+  for(var _ti=0;_ti<d.todos.length;_ti++){
+    var _t=d.todos[_ti];
+    if(!_t){continue;}
+    /* 没有结束日 → 单日计划，结束日等于开始日 */
+    if(!_t.endDate){_t.endDate=_t.date||'';}
+    /* 没有 owners 数组 → 用单个 owner 拼一个；没负责人就空数组 */
+    if(!_t.owners){_t.owners=_t.owner?[_t.owner]:[];}
+  }
   if(!d.prepTodos){d.prepTodos=[];}
   if(!d.prepaid){d.prepaid=[];}
   if(!d.members){d.members=[];}
@@ -2489,13 +2517,16 @@ function renderPrep(){
   var todos=data.todos||[];
   var today=todayStr();
   var toStart=daysBetween(today,TRIP_START);
-  /* 待办分类：逾期 / 今日 / 未来 */
+  /* 计划分类：逾期 / 今天要做 / 未来
+     逾期看结束日 —— 9.25–9.30 的阶段计划，9.27 那天还在进行中，不该标红。
+     今天要做包含「今天正好落在区间里」的阶段计划。 */
   var overdueTodos=[],todayTodos=[],upcomingTodos=[];
   for(var ti=0;ti<todos.length;ti++){
-    if(todos[ti].done){continue;}
-    if(todos[ti].date<today){overdueTodos.push(todos[ti]);}
-    else if(todos[ti].date===today){todayTodos.push(todos[ti]);}
-    else{upcomingTodos.push(todos[ti]);}
+    var _p=todos[ti];
+    if(_p.done){continue;}
+    if(planEnd(_p)&&planEnd(_p)<today){overdueTodos.push(_p);}
+    else if(planCoversDate(_p,today)){todayTodos.push(_p);}
+    else{upcomingTodos.push(_p);}
   }
   /* 未购物品 */
   var pendingItems=[];
@@ -2509,13 +2540,19 @@ function renderPrep(){
   /* 今天要处理 */
   var todayHtml='<div class="today-section"><div class="today-title">'+svgIcon('today')+'今天要处理</div>';
   if(overdueTodos.length===0&&todayTodos.length===0&&pendingItems.length===0){
-    todayHtml+='<div class="today-empty">暂无待办与待购物品，点下方「添加待办 / 添加物品」开始规划</div>';
+    todayHtml+='<div class="today-empty">暂无计划与待购物品，点下方「添加计划 / 添加物品」开始规划</div>';
   }else{
     for(var j=0;j<overdueTodos.length;j++){
-      todayHtml+='<div class="today-item overdue"><span class="label"><strong>【逾期】</strong>'+escapeHtml(overdueTodos[j].text)+'</span><button class="btn btn-sm btn-primary act-btn" data-action="doneTodo" data-id="'+overdueTodos[j].id+'">完成</button></div>';
+      todayHtml+='<div class="today-item overdue"><span class="label"><strong>【逾期】</strong>'+escapeHtml(overdueTodos[j].text)+
+        '<span class="plan-range">'+planDateLabel(overdueTodos[j])+'</span>'+planByBadge(overdueTodos[j])+
+        '</span><button class="btn btn-sm btn-primary act-btn" data-action="doneTodo" data-id="'+overdueTodos[j].id+'">完成</button></div>';
     }
     for(var t2=0;t2<todayTodos.length;t2++){
-      todayHtml+='<div class="today-item"><span class="label"><strong>【今日】</strong>'+escapeHtml(todayTodos[t2].text)+'</span><button class="btn btn-sm btn-primary act-btn" data-action="doneTodo" data-id="'+todayTodos[t2].id+'">完成</button></div>';
+      /* 阶段计划标「进行中」，单日标「今日」，区分开更清楚 */
+      var _lbl=planIsRange(todayTodos[t2])?'【进行中】':'【今日】';
+      todayHtml+='<div class="today-item"><span class="label"><strong>'+_lbl+'</strong>'+escapeHtml(todayTodos[t2].text)+
+        '<span class="plan-range">'+planDateLabel(todayTodos[t2])+'</span>'+planByBadge(todayTodos[t2])+
+        '</span><button class="btn btn-sm btn-primary act-btn" data-action="doneTodo" data-id="'+todayTodos[t2].id+'">完成</button></div>';
     }
     for(var u2=0;u2<urgentItems.length;u2++){
       todayHtml+='<div class="today-item overdue"><span class="label"><strong>【急购】</strong>'+escapeHtml(urgentItems[u2].category)+' · '+escapeHtml(urgentItems[u2].name)+'</span><button class="btn btn-sm btn-primary act-btn" data-action="bought" data-id="'+urgentItems[u2].id+'">已购</button></div>';
@@ -2537,14 +2574,25 @@ function renderPrep(){
   for(var dt=0;dt<todos.length;dt++){
     if(todos[dt].done){doneTodos.push(todos[dt]);}
   }
-  var todoCard='<div class="card"><div class="card-title">'+svgIcon('today')+'待办清单 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（未完成 '+(overdueTodos.length+todayTodos.length+upcomingTodos.length)+' · 已完成 '+doneTodos.length+'）</span></div>';
+  var todoCard='<div class="card"><div class="card-title">'+svgIcon('today')+'计划清单 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（未完成 '+(overdueTodos.length+todayTodos.length+upcomingTodos.length)+' · 已完成 '+doneTodos.length+'）</span></div>';
   if(overdueTodos.length+todayTodos.length+upcomingTodos.length===0&&doneTodos.length===0){
-    todoCard+='<div class="empty">'+svgIcon('check')+'<div>暂无待办，点下方「添加待办」</div></div>';
+    todoCard+='<div class="empty">'+svgIcon('check')+'<div>暂无计划，点下方「添加计划」</div></div>';
   }else{
     var allOpen=overdueTodos.concat(todayTodos).concat(upcomingTodos);
     for(var a=0;a<allOpen.length;a++){
-      var od=allOpen[a].date<today;
-      todoCard+='<div class="todo-item"><input type="checkbox" data-id="'+allOpen[a].id+'" class="todo-check"><span class="text">'+(od?'<span style="color:var(--danger);font-weight:600">[逾期] </span>':'')+escapeHtml(allOpen[a].text)+' <span style="color:var(--text-light);font-size:0.72rem">· '+fmtDate(allOpen[a].date)+'前</span>'+(allOpen[a].owner?ownerBadge(allOpen[a].owner):'')+'</span><button class="del-todo" data-action="delTodo" data-id="'+allOpen[a].id+'">'+svgIcon('trash')+'</button></div>';
+      var _pl=allOpen[a];
+      var od=planEnd(_pl)&&planEnd(_pl)<today;
+      /* 左侧色条用创建者的颜色 —— 团队里一眼能分出谁加的 */
+      var _bcol=planByColor(_pl.by||planByName(_pl));
+      todoCard+='<div class="todo-item plan" style="border-left-color:'+_bcol+'">'+
+        '<input type="checkbox" data-id="'+_pl.id+'" class="todo-check">'+
+        '<span class="text">'+(od?'<span style="color:var(--danger);font-weight:600">[逾期] </span>':'')+
+        escapeHtml(_pl.text)+
+        '<span class="plan-range">'+planDateLabel(_pl)+'</span>'+
+        ownersBadges(_pl)+planByBadge(_pl)+
+        '</span>'+
+        '<button class="del-todo" data-action="editTodo" data-id="'+_pl.id+'" title="修改">'+svgIcon('edit')+'</button>'+
+        '<button class="del-todo" data-action="delTodo" data-id="'+_pl.id+'">'+svgIcon('trash')+'</button></div>';
     }
     if(doneTodos.length>0){
       todoCard+='<div style="font-size:0.75rem;color:var(--text-light);margin:8px 0 4px">已完成：</div>';
@@ -2572,7 +2620,7 @@ function renderPrep(){
     '<div class="progress-wrap"><div class="progress-label"><span>备齐进度</span><span>'+prog+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+prog+'%"></div></div></div>'+
     '</div>';
   /* 工具栏 */
-  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addTodoBtn">'+svgIcon('plus')+'添加待办</button><button class="btn btn-primary btn-sm" id="addPrepBtn">'+svgIcon('plus')+'添加物品</button><button class="btn btn-outline btn-sm" id="clearPrepSampleBtn">清空数据</button></div>';
+  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addTodoBtn">'+svgIcon('plus')+'添加计划</button><button class="btn btn-primary btn-sm" id="addPrepBtn">'+svgIcon('plus')+'添加物品</button><button class="btn btn-outline btn-sm" id="clearPrepSampleBtn">清空数据</button></div>';
   /* 清单表格 */
   var categories={};
   for(var c=0;c<prepItems.length;c++){
@@ -2605,7 +2653,7 @@ function renderPrep(){
   if(addBtn){addBtn.onclick=function(){showPrepForm();};}
   var clearBtn=document.getElementById('clearPrepSampleBtn');
   if(clearBtn){clearBtn.onclick=function(){
-    showConfirm('清空准备数据','将删除全部待办与物品记录，此操作不可撤销。确定继续吗？',function(){
+    showConfirm('清空准备数据','将删除全部计划与物品记录，此操作不可撤销。确定继续吗？',function(){
       state.data.prepItems=[];state.data.todos=[];saveData();renderPrep();showToast('已清空');
     });
   };}
@@ -2666,6 +2714,16 @@ function renderPrep(){
         }
         saveData();renderPrep();showToast('已删除');
       });
+    };
+  }
+  /* 编辑计划 */
+  var editTodoBtns=p.querySelectorAll('[data-action="editTodo"]');
+  for(var eti=0;eti<editTodoBtns.length;eti++){
+    editTodoBtns[eti].onclick=function(){
+      var id=this.getAttribute('data-id');
+      for(var i=0;i<state.data.todos.length;i++){
+        if(state.data.todos[i].id===id){showTodoForm(state.data.todos[i]);break;}
+      }
     };
   }
   /* 编辑物品 */
@@ -2794,6 +2852,101 @@ function ownerBadge(ownerId){
   var col=(i>=0)?memberColor(i):'#95a5a6';
   return '<span class="item-owner" style="color:'+col+';background:'+col+'1a">'+escapeHtml(name)+'</span>';
 }
+/* ---------- 计划（原待办）字段读取 ----------
+   老数据只有 date + owner，新数据是 date~endDate + owners[]。
+   所有渲染和统计都走这几个函数，避免每处都写一遍兼容判断。 */
+/* 开始日 */
+function planStart(t){return t.date||'';}
+/* 结束日：没有就退回开始日（单日计划） */
+function planEnd(t){return t.endDate||t.date||'';}
+/* 是否跨天 */
+function planIsRange(t){
+  var a=planStart(t),b=planEnd(t);
+  return !!(a&&b&&b>a);
+}
+/* 负责人数组：优先 owners，退回单个 owner */
+function planOwners(t){
+  if(t.owners&&t.owners.length){return t.owners;}
+  return t.owner?[t.owner]:[];
+}
+/* 某成员是否参与这个计划 */
+function planHasOwner(t,mid){
+  var os=planOwners(t),i;
+  for(i=0;i<os.length;i++){if(os[i]===mid){return true;}}
+  return false;
+}
+/* 某天是否落在计划区间内（含首尾） */
+function planCoversDate(t,ds){
+  var a=planStart(t),b=planEnd(t);
+  if(!a){return false;}
+  if(!b){return ds===a;}
+  return ds>=a&&ds<=b;
+}
+/* 计划的紧急度基准日：用结束日判断逾期
+   （阶段计划只要还没到结束日就不算逾期，9.25-9.30 在 9.27 那天不该标红） */
+function planDueDate(t){return planEnd(t);}
+/* 日期区间的显示文案 */
+function planDateLabel(t){
+  var a=planStart(t),b=planEnd(t);
+  if(!a){return '未定日期';}
+  if(!b||b===a){return fmtDate(a)+'前';}
+  return fmtDate(a)+'–'+fmtDate(b);
+}
+/* 创建者色块：按 uid 稳定散列取色，不同人不同颜色 */
+var PLAN_BY_COLORS=['#2d8b8b','#f0a04b','#9b59b6','#3498db','#e85d5d','#16a085','#e67e22','#7f8c8d'];
+function planByColor(key){
+  if(!key){return '#95a5a6';}
+  var h=0,i;
+  for(i=0;i<key.length;i++){h=(h*31+key.charCodeAt(i))%99991;}
+  return PLAN_BY_COLORS[h%PLAN_BY_COLORS.length];
+}
+/* 创建者显示名：优先存的快照，其次按 uid 找认领的成员 */
+function planByName(t){
+  if(t.byName){return t.byName;}
+  if(t.by){
+    var ms=aliveMembers(),i;
+    for(i=0;i<ms.length;i++){if(ms[i].uid===t.by){return ms[i].name;}}
+  }
+  return '';
+}
+/* 多人负责徽章 */
+function ownersBadges(t){
+  var os=planOwners(t),html='',i;
+  for(i=0;i<os.length;i++){html+=ownerBadge(os[i]);}
+  return html;
+}
+/* 创建者小标签 */
+function planByBadge(t){
+  var nm=planByName(t);
+  if(!nm){return '';}
+  var col=planByColor(t.by||nm);
+  return '<span class="plan-by" style="color:'+col+';background:'+col+'1a;border-color:'+col+'55">'+
+         escapeHtml(nm)+' 添加</span>';
+}
+/* 计划负责人多选：一排可点的小胶囊，点一下切换选中
+   （用 checkbox 而不是 multiple select —— 手机上 multiple select 极难点） */
+function ownerCheckboxes(selIds){
+  selIds=selIds||[];
+  var mlist=aliveMembers(),html='',i;
+  if(!mlist.length){return '<div style="font-size:0.75rem;color:var(--text-light)">还没有成员</div>';}
+  html='<div class="owner-pick">';
+  for(i=0;i<mlist.length;i++){
+    var m=mlist[i],on=false,j;
+    for(j=0;j<selIds.length;j++){if(selIds[j]===m.id){on=true;break;}}
+    var col=memberColor(i);
+    html+='<label class="owner-chip'+(on?' on':'')+'" style="'+(on?('border-color:'+col+';background:'+col+'1a;color:'+col):'')+'">'+
+      '<input type="checkbox" class="fOwnerChk" value="'+m.id+'"'+(on?' checked':'')+'>'+
+      escapeHtml(m.name)+'</label>';
+  }
+  html+='</div>';
+  return html;
+}
+/* 读取多选负责人的当前值 */
+function readOwnerChecks(){
+  var els=document.querySelectorAll('.fOwnerChk'),out=[],i;
+  for(i=0;i<els.length;i++){if(els[i].checked){out.push(els[i].value);}}
+  return out;
+}
 /* 待办负责人下拉选项 */
 function memberSelectOptions(selId){
   var html='<option value="">未分配</option>';
@@ -2821,7 +2974,8 @@ function showMemberDetail(memberId){
   var myTodos=[];
   var _td=aliveList(state.data.todos);
   for(var t=0;t<_td.length;t++){
-    if(_td[t].owner===memberId){myTodos.push(_td[t]);}
+    /* 用 planHasOwner 而不是 ===：多人计划要在每个负责人名下都算一份 */
+    if(planHasOwner(_td[t],memberId)){myTodos.push(_td[t]);}
   }
   var totalItems=myItems.length,totalTodos=myTodos.length;
   var doneItems=0,doneTodos=0;
@@ -2840,7 +2994,7 @@ function showMemberDetail(memberId){
   /* 进度详情 */
   var detailStats='<div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">'+
     '<div style="flex:1;min-width:70px;background:var(--primary-bg);border-radius:10px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--primary-dark)">'+totalItems+'</div><div style="font-size:0.7rem;color:var(--text-light)">负责物品</div><div style="font-size:0.7rem;color:var(--primary)">已购 '+doneItems+'</div></div>'+
-    '<div style="flex:1;min-width:70px;background:var(--primary-bg);border-radius:10px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--primary-dark)">'+totalTodos+'</div><div style="font-size:0.7rem;color:var(--text-light)">负责待办</div><div style="font-size:0.7rem;color:var(--primary)">完成 '+doneTodos+'</div></div>'+
+    '<div style="flex:1;min-width:70px;background:var(--primary-bg);border-radius:10px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--primary-dark)">'+totalTodos+'</div><div style="font-size:0.7rem;color:var(--text-light)">负责计划</div><div style="font-size:0.7rem;color:var(--primary)">完成 '+doneTodos+'</div></div>'+
     '</div>';
   /* 物品列表 */
   var itemHtml='<div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);margin:8px 0 4px">负责的物品</div>';
@@ -2854,13 +3008,13 @@ function showMemberDetail(memberId){
     itemHtml+='</div>';
   }
   /* 待办列表 */
-  var todoHtml='<div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);margin:8px 0 4px">负责的待办</div>';
+  var todoHtml='<div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);margin:8px 0 4px">负责的计划</div>';
   if(myTodos.length===0){todoHtml+='<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0">暂无</div>';}
   else{
     todoHtml+='<div style="max-height:180px;overflow-y:auto">';
     for(var tj=0;tj<myTodos.length;tj++){
       var td=myTodos[tj];
-      todoHtml+='<div class="todo-item'+(td.done?' done':'')+'"><input type="checkbox"'+(td.done?' checked':'')+' data-kind="todo" data-id="'+td.id+'" class="mdl-check"><span class="text">'+escapeHtml(td.text)+' <span style="color:var(--text-light);font-size:0.72rem">'+fmtDate(td.date)+'前</span></span></div>';
+      todoHtml+='<div class="todo-item'+(td.done?' done':'')+'"><input type="checkbox"'+(td.done?' checked':'')+' data-kind="todo" data-id="'+td.id+'" class="mdl-check"><span class="text">'+escapeHtml(td.text)+' <span style="color:var(--text-light);font-size:0.72rem">'+planDateLabel(td)+'</span>'+planByBadge(td)+'</span></div>';
     }
     todoHtml+='</div>';
   }
@@ -2903,16 +3057,25 @@ function renderPrepCalendar(todos,today){
   var first=new Date(y,mo,1);
   var startDow=first.getDay(); /* 0=周日 */
   var daysInMonth=new Date(y,mo+1,0).getDate();
-  var byDate={};
+  /* 把每个计划铺到它覆盖的每一天，阶段计划才会在日历上连成一片。
+     顺便记下创建者颜色，日历格子里画一条对应颜色的小条。 */
+  var byDate={},barColor={};
   for(var i=0;i<todos.length;i++){
     if(todos[i].done){continue;}
-    var d=todos[i].date;
-    if(d&&!byDate[d]){byDate[d]=[];}
-    if(d){byDate[d].push(todos[i].text);}
+    var a=planStart(todos[i]),b=planEnd(todos[i])||a;
+    if(!a){continue;}
+    var cur=a,guard=0;
+    while(cur<=b&&guard<400){
+      if(!byDate[cur]){byDate[cur]=[];}
+      byDate[cur].push(todos[i]);
+      if(!barColor[cur]){barColor[cur]=planByColor(todos[i].by||planByName(todos[i]));}
+      cur=addDays(cur,1);
+      guard++;
+    }
   }
   var todayStrVal=todayStr();
   var week=['日','一','二','三','四','五','六'];
-  var html='<div class="calendar-wrap"><div class="calendar-head"><div class="cal-title">'+svgIcon('calendar')+'待办日历 · '+y+'年'+(mo+1)+'月</div><div class="cal-nav">'+
+  var html='<div class="calendar-wrap"><div class="calendar-head"><div class="cal-title">'+svgIcon('calendar')+'计划日历 · '+y+'年'+(mo+1)+'月</div><div class="cal-nav">'+
     '<button class="cal-nav-btn" data-dir="-1">‹</button>'+
     '<button class="cal-nav-btn" data-dir="today">今</button>'+
     '<button class="cal-nav-btn" data-dir="1">›</button></div></div><div class="cal-grid">';
@@ -2927,17 +3090,25 @@ function renderPrepCalendar(todos,today){
     if(ds===todayStrVal){cls+=' today';}
     if(ds===sel){cls+=' sel';}
     var dot=byDate[ds]?('·'+byDate[ds].length):'';
-    html+='<div class="'+cls+'" data-date="'+ds+'"><span class="day-num">'+day+'</span><span class="day-dot">'+dot+'</span></div>';
+    var bar=byDate[ds]?('<span class="day-bar" style="background:'+barColor[ds]+'"></span>'):'';
+    html+='<div class="'+cls+'" data-date="'+ds+'"><span class="day-num">'+day+'</span><span class="day-dot">'+dot+'</span>'+bar+'</div>';
   }
   html+='</div>';
   /* 图例 + 选中日期明细 */
-  html+='<div class="cal-legend"><span class="lg"><span class="dot" style="background:var(--primary)"></span>今天</span><span class="lg"><span class="dot" style="background:var(--primary-bg);border:1px solid var(--primary-light)"></span>有待办</span><span class="lg"><span class="dot" style="background:transparent;border:1px dashed #ccc"></span>已过期</span></div>';
+  html+='<div class="cal-legend"><span class="lg"><span class="dot" style="background:var(--primary)"></span>今天</span><span class="lg"><span class="dot" style="background:var(--primary-bg);border:1px solid var(--primary-light)"></span>有计划</span><span class="lg"><span class="dot" style="background:transparent;border:1px dashed #ccc"></span>已过期</span></div>';
   if(sel){
     var sels=byDate[sel]||[];
-    html+='<div class="cal-selected-list"><div class="cal-sel-title">'+fmtDate(sel)+' 待办（'+(sels.length? sels.length:'0')+'）</div>';
+    html+='<div class="cal-selected-list"><div class="cal-sel-title">'+fmtDate(sel)+' 计划（'+(sels.length? sels.length:'0')+'）</div>';
     if(sels.length){
-      for(var s2=0;s2<sels.length;s2++){html+='<div style="font-size:0.78rem;color:var(--text);padding:2px 0">· '+escapeHtml(sels[s2])+'</div>';}
-    }else{html+='<div style="font-size:0.75rem;color:var(--text-light)">这天没有待办</div>';}
+      for(var s2=0;s2<sels.length;s2++){
+        var _sp=sels[s2];
+        html+='<div style="font-size:0.78rem;color:var(--text);padding:3px 0;border-left:3px solid '+
+          planByColor(_sp.by||planByName(_sp))+';padding-left:6px;margin-bottom:2px">'+
+          escapeHtml(_sp.text)+
+          (planIsRange(_sp)?('<span class="plan-range">'+planDateLabel(_sp)+'</span>'):'')+
+          ownersBadges(_sp)+planByBadge(_sp)+'</div>';
+      }
+    }else{html+='<div style="font-size:0.75rem;color:var(--text-light)">这天没有计划</div>';}
     html+='</div>';
   }
   html+='</div>';
@@ -3685,7 +3856,7 @@ function showOutfitForm(){
 }
 
 /* ============================================================
-   模块 4：途中管理（行程卡 + 待办 + 倒计时）
+   模块 4：途中管理（行程卡 + 计划 + 倒计时）
    ============================================================ */
 function renderTrip(){
   var p=document.getElementById('panel-trip');
@@ -3749,25 +3920,68 @@ function renderTrip(){
     };
   }
 }
-function showTodoForm(){
+/* 计划表单（plan 存在则编辑，否则新增） */
+function showTodoForm(plan){
+  plan=plan||null;
   var today=todayStr();
+  var vStart=plan?planStart(plan):today;
+  var vEnd=plan?planEnd(plan):today;
+  var vOwners=plan?planOwners(plan):[];
   var sheet=document.getElementById('formModalSheet');
-  sheet.innerHTML='<div class="form-modal-title">添加待办<button id="closeForm">✕</button></div>'+
-    '<div class="form-row"><div><label>日期</label><input type="date" id="fDate" value="'+today+'"></div>'+
-    '<div><label>负责人</label><select id="fOwner">'+memberSelectOptions('')+'</select></div></div>'+
-    '<div class="form-row"><div style="flex:1"><label>待办内容</label><input type="text" id="fText" placeholder="如：预订莫高窟门票"></div></div>'+
+  sheet.innerHTML='<div class="form-modal-title">'+(plan?'修改计划':'添加计划')+'<button id="closeForm">✕</button></div>'+
+    '<div class="form-row"><div style="flex:1"><label>计划内容</label><input type="text" id="fText" placeholder="如：预订莫高窟门票" value="'+(plan?escapeHtml(plan.text):'')+'"></div></div>'+
+    '<div class="form-row"><div><label>开始日期</label><input type="date" id="fDate" value="'+vStart+'"></div>'+
+    '<div><label>结束日期</label><input type="date" id="fEndDate" value="'+vEnd+'"></div></div>'+
+    '<div style="font-size:0.7rem;color:var(--text-light);margin:-4px 0 8px">单天的计划，两个日期填一样就行；跨几天就选一段（如 9.25–9.30）</div>'+
+    '<div class="form-row"><div style="flex:1"><label>负责人（可多选）</label>'+ownerCheckboxes(vOwners)+'</div></div>'+
     '<button class="btn btn-primary btn-block" style="margin-top:12px" id="saveTodoBtn">保存</button>';
   document.getElementById('formModal').classList.add('show');
   document.getElementById('closeForm').onclick=function(){document.getElementById('formModal').classList.remove('show');};
+  /* 胶囊点击时同步高亮（checkbox 本身是隐藏的） */
+  var chks=document.querySelectorAll('.fOwnerChk'),ci;
+  for(ci=0;ci<chks.length;ci++){
+    chks[ci].onchange=function(){
+      var lb=this.parentNode;
+      if(this.checked){lb.className='owner-chip on';}
+      else{lb.className='owner-chip';lb.removeAttribute('style');}
+    };
+  }
   document.getElementById('saveTodoBtn').onclick=function(){
-    var t={id:genId(),date:document.getElementById('fDate').value,text:document.getElementById('fText').value.trim(),owner:document.getElementById('fOwner').value,done:false,_ts:Date.now()};
-    if(!t.date){showToast('请选择日期');return;}
-    if(!t.text){showToast('请填写内容');return;}
-    state.data.todos.push(t);saveData();
-    /* 日历跳到该待办所在月份 */
-    var dp=t.date.split('-');if(dp.length===3){state.calYear=parseInt(dp[0],10);state.calMonth=parseInt(dp[1],10)-1;state.calSel=t.date;}
+    var start=document.getElementById('fDate').value;
+    var end=document.getElementById('fEndDate').value||start;
+    var text=document.getElementById('fText').value.trim();
+    if(!start){showToast('请选择开始日期');return;}
+    if(!text){showToast('请填写计划内容');return;}
+    /* 结束日早于开始日 → 自动兑换，别让用户为了顺序再填一遍 */
+    if(end<start){var tmp=start;start=end;end=tmp;}
+    var owners=readOwnerChecks();
+    if(plan){
+      /* 编辑：保留原创建者，不冒领别人的计划 */
+      for(var i=0;i<state.data.todos.length;i++){
+        if(state.data.todos[i].id===plan.id){
+          var o=state.data.todos[i];
+          o.date=start;o.endDate=end;o.text=text;
+          o.owners=owners;o.owner=owners.length?owners[0]:'';
+          o._ts=Date.now();
+          break;
+        }
+      }
+    }else{
+      var t={id:genId(),date:start,endDate:end,text:text,
+             owners:owners,
+             /* owner 单字段同步写一份：老版本页面读的是这个 */
+             owner:owners.length?owners[0]:'',
+             done:false,
+             by:myUid(),byName:currentNickname(),
+             _ts:Date.now()};
+      state.data.todos.push(t);
+    }
+    saveData();
+    /* 日历跳到计划开始的月份 */
+    var dp=start.split('-');
+    if(dp.length===3){state.calYear=parseInt(dp[0],10);state.calMonth=parseInt(dp[1],10)-1;state.calSel=start;}
     document.getElementById('formModal').classList.remove('show');
-    renderPrep();showToast('已添加');
+    renderPrep();showToast(plan?'已更新':'已添加');
   };
 }
 
@@ -4379,13 +4593,17 @@ function buildAISystemPrompt(){
       '你要回一个指令，单独占一行，前后不要加代码块标记。四种类型：\n'+
       '@@ADD{"kind":"expense","amount":120,"category":"餐饮","type":"collective","note":"午饭","exclude":["老王"]}\n'+
       '@@ADD{"kind":"prep","name":"登山杖","category":"服饰装备","price":80,"channel":"淘宝","owner":"小美"}\n'+
-      '@@ADD{"kind":"todo","date":"2026-09-20","text":"订莫高窟门票","owner":"阿杰"}\n'+
+      '@@ADD{"kind":"todo","date":"2026-09-20","endDate":"2026-09-20","text":"订莫高窟门票","owners":["阿杰"]}\n'+
       '@@ADD{"kind":"outfit","date":"2026-09-26","person":"小美","desc":"冲锋衣+速干裤"}\n'+
       '  - expense：amount 必填数字；category 从 '+EXPENSE_CATEGORIES.join('/')+' 里挑最接近的；'+
       'type 大家一起花的用 collective、某人自己买的用 personal；'+
       'exclude 可选，填没参与的人的名字（用户说"某人没去/没吃"时）\n'+
       '  - prep：name 必填；category 从 服饰装备/个护美妆/药品保健/证件/食品/其他 里挑；price/channel 可选\n'+
-      '  - todo：text 必填；date 必须是 YYYY-MM-DD，用户说"下周三"这种相对时间，你按上面给的今天日期换算成具体日期\n'+
+      '  - todo（计划）：text 必填；date 是开始日，必须 YYYY-MM-DD；'+
+      'endDate 是结束日，单天的计划就填成和 date 一样，'+
+      '用户说"9月25到30号"这种一段时间，date 填 2026-09-25、endDate 填 2026-09-30；'+
+      '用户说"下周三"这种相对时间，你按上面给的今天日期换算成具体日期；'+
+      'owners 是数组，可以填多个人的名字，用户说"我和小美一起"就填两个\n'+
       '  - outfit：desc 必填；date 同上\n'+
       '  - owner/person 填成员名字，用户没说就别写这个字段\n'+
       '  - 一次只输出一条指令。用户一句话说了好几件事，先办最主要的，其余的问一句再说\n'+
@@ -4598,6 +4816,8 @@ function parseAIRecord(text){
     if(o.kind==='expense'&&!(Number(o.amount)>0)){return null;}
     if(o.kind==='prep'&&!o.name){return null;}
     if(o.kind==='todo'&&!o.text){return null;}
+    /* owners 万一 AI 给成字符串，包成数组，免得后面 .length 拿到字数 */
+    if(o.owners&&typeof o.owners==='string'){o.owners=[o.owners];}
     if(o.kind==='outfit'&&!o.desc){return null;}
     return {obj:o,raw:text.slice(i,end+1)};
   }catch(e){return null;}
@@ -4651,21 +4871,37 @@ function confirmAIPrep(o){
     saveData();showToast('已加入必买清单');renderAll();
   });
 }
-/* 待办（订票这种） */
+/* 计划（订票这种，支持阶段和多人） */
 function confirmAITodo(o){
   var date=safeDate(o.date);
-  var owner=resolveMemberId(o.owner);
+  /* endDate 没给或不合法就当单日；给反了自动兑换 */
+  var end=o.endDate?safeDate(o.endDate):date;
+  if(end<date){var _t=date;date=end;end=_t;}
+  /* owners 支持数组，也兼容 AI 只给了单个 owner 的情况 */
+  var raw=o.owners&&o.owners.length?o.owners:(o.owner?[o.owner]:[]);
+  var owners=[],seen={},ri;
+  for(ri=0;ri<raw.length;ri++){
+    var mid=resolveMemberId(raw[ri]);
+    if(mid&&!seen[mid]){seen[mid]=true;owners.push(mid);}
+  }
+  var nameList='未指定';
+  if(owners.length){
+    var ns=[],ni;
+    for(ni=0;ni<owners.length;ni++){ns.push(memberNameById(owners[ni]));}
+    nameList=ns.join('、');
+  }
   var body='内容：'+o.text+'\n'+
-    '日期：'+fmtDate(date)+'\n'+
-    '负责人：'+(owner?memberNameById(owner):'未指定')+'\n'+
-    '\n加到待办里吗？';
-  showConfirm('AI 帮你加个待办',body,function(){
-    var t={id:genId(),date:date,text:String(o.text).trim(),
-           owner:owner,done:false,_ts:Date.now()};
+    '日期：'+(end===date?fmtDate(date):(fmtDate(date)+' – '+fmtDate(end)))+'\n'+
+    '负责人：'+nameList+'\n'+
+    '\n加到计划里吗？';
+  showConfirm('AI 帮你加个计划',body,function(){
+    var t={id:genId(),date:date,endDate:end,text:String(o.text).trim(),
+           owners:owners,owner:owners.length?owners[0]:'',
+           done:false,by:myUid(),byName:currentNickname(),_ts:Date.now()};
     state.data.todos.push(t);saveData();
     var dp=t.date.split('-');
     if(dp.length===3){state.calYear=parseInt(dp[0],10);state.calMonth=parseInt(dp[1],10)-1;state.calSel=t.date;}
-    showToast('已加入待办');renderAll();
+    showToast('已加入计划');renderAll();
   });
 }
 /* 穿搭 */
