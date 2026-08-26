@@ -304,7 +304,7 @@ body.space-personal .expense-item .payer-tag{background:#fff3e0;color:#8a5a1a;bo
 .todo-item .del-todo{border:none;background:transparent;cursor:pointer;color:var(--text-light);padding:2px;font-family:inherit;}
 .todo-item .del-todo svg{width:14px;height:14px;}
 /* ========== 弹窗 ========== */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:260;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.show{display:flex;}
 .modal{background:var(--card);border-radius:var(--radius);padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
 .modal-title{font-size:1rem;font-weight:600;margin-bottom:12px;color:var(--primary-dark);}
@@ -315,7 +315,7 @@ body.space-personal .expense-item .payer-tag{background:#fff3e0;color:#8a5a1a;bo
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .toolbar .btn{flex:1;min-width:100px;}
 /* ========== 模态表单容器 ========== */
-.form-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;}
+.form-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:260;align-items:flex-end;justify-content:center;}
 .form-modal.show{display:flex;}
 .form-modal-sheet{background:var(--card);border-radius:var(--radius) var(--radius) 0 0;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;padding:20px 20px calc(20px + var(--safe-bottom));animation:slideUp 0.25s ease;}
 @media(min-width:560px){.form-modal{align-items:center;}.form-modal-sheet{border-radius:var(--radius);}}
@@ -4133,6 +4133,10 @@ function showPrompt(title,label,defVal,cb){
     cb&&cb(v);
   };
   document.getElementById('confirmModal').classList.add('show');
+  pushUILayer('confirm',function(){
+    /* 只隐藏，不清 body：confirmOk 关闭后还要读 promptInput 的值 */
+    document.getElementById('confirmModal').classList.remove('show');
+  });
   setTimeout(function(){
     var el=document.getElementById('promptInput');
     if(el){el.focus();el.select();}
@@ -4144,14 +4148,18 @@ function showConfirm(title,body,cb){
   document.getElementById('confirmBody').textContent=body;
   confirmCallback=cb;
   document.getElementById('confirmModal').classList.add('show');
+  pushUILayer('confirm',function(){document.getElementById('confirmModal').classList.remove('show');});
 }
 document.getElementById('confirmCancel').onclick=function(){
-  document.getElementById('confirmModal').classList.remove('show');
   confirmCallback=null;
+  document.getElementById('confirmBody').innerHTML='';
+  popUILayer('confirm');   /* 里面会 remove('show') 并退掉那条历史 */
 };
 document.getElementById('confirmOk').onclick=function(){
-  document.getElementById('confirmModal').classList.remove('show');
-  if(confirmCallback){confirmCallback();confirmCallback=null;}
+  var cb=confirmCallback;confirmCallback=null;
+  popUILayer('confirm');
+  /* 回调放到关闭之后：回调里可能又要弹一个新的确认框（比如 AI 连着记两笔） */
+  if(cb){setTimeout(cb,0);}
 };
 /* 同步码按钮 */
 document.getElementById('syncCodeBtn').onclick=showSyncModal;
@@ -4366,13 +4374,22 @@ function buildAISystemPrompt(){
     '2. 当地美食、景点、住宿推荐\n'+
     '3. 穿搭建议（结合每日天气）\n'+
     '4. 记账与预算贴士、AA 结算建议（你能看到真实账本，请基于实际数字回答，别编数字）\n'+
-    '5. 帮用户记账：用户说"午饭花了120""加油300老王没去"这类话时，'+
-      '你要回一个记账指令，格式严格如下（单独一行，前后不要加代码块标记）：\n'+
-      '@@RECORD{"amount":120,"category":"餐饮","type":"collective","note":"午饭","exclude":["老王"]}\n'+
-      '  - amount 必填数字；category 从 '+EXPENSE_CATEGORIES.join('/')+' 里挑最接近的\n'+
-      '  - type：大家一起花的用 collective，某人自己买的用 personal\n'+
-      '  - exclude 可选，填没参与的人的名字（用户说"某人没去/没吃"时）\n'+
-      '  - 指令那一行之外，再用一句话跟用户确认，比如"记好了，午饭120，老王没参与"\n'+
+    '5. 帮用户记东西（花费/要买的东西/待办/穿搭都能记）：\n'+
+      '用户说"午饭花了120""帮我加个登山杖""9月20号订莫高窟门票"这类话时，'+
+      '你要回一个指令，单独占一行，前后不要加代码块标记。四种类型：\n'+
+      '@@ADD{"kind":"expense","amount":120,"category":"餐饮","type":"collective","note":"午饭","exclude":["老王"]}\n'+
+      '@@ADD{"kind":"prep","name":"登山杖","category":"服饰装备","price":80,"channel":"淘宝","owner":"小美"}\n'+
+      '@@ADD{"kind":"todo","date":"2026-09-20","text":"订莫高窟门票","owner":"阿杰"}\n'+
+      '@@ADD{"kind":"outfit","date":"2026-09-26","person":"小美","desc":"冲锋衣+速干裤"}\n'+
+      '  - expense：amount 必填数字；category 从 '+EXPENSE_CATEGORIES.join('/')+' 里挑最接近的；'+
+      'type 大家一起花的用 collective、某人自己买的用 personal；'+
+      'exclude 可选，填没参与的人的名字（用户说"某人没去/没吃"时）\n'+
+      '  - prep：name 必填；category 从 服饰装备/个护美妆/药品保健/证件/食品/其他 里挑；price/channel 可选\n'+
+      '  - todo：text 必填；date 必须是 YYYY-MM-DD，用户说"下周三"这种相对时间，你按上面给的今天日期换算成具体日期\n'+
+      '  - outfit：desc 必填；date 同上\n'+
+      '  - owner/person 填成员名字，用户没说就别写这个字段\n'+
+      '  - 一次只输出一条指令。用户一句话说了好几件事，先办最主要的，其余的问一句再说\n'+
+      '  - 指令那行之外，再用一句话跟用户确认，比如"记好了，午饭120，老王没参与"\n'+
       '  - 用户只是闲聊或问问题时，不要输出这个指令\n'+
     '6. 闲聊逗闷子、讲笑话、缓解旅途疲惫\n'+
     '7. 高原反应、安全提示\n\n'+
@@ -4555,9 +4572,14 @@ function askAI(question){
 /* ---------- AI 自然语言记账 ----------
    AI 回复里带 @@RECORD{...} 时，解析成账目，弹确认框让用户过一眼再入账。
    不自动入账，因为 AI 偶尔会把金额听错，让用户确认一下更安全。 */
+/* 兼容老的 @@RECORD，同时支持新的 @@ADD */
 function parseAIRecord(text){
-  if(!text||text.indexOf('@@RECORD')<0){return null;}
-  var i=text.indexOf('@@RECORD');
+  if(!text){return null;}
+  var tag=null;
+  if(text.indexOf('@@ADD')>=0){tag='@@ADD';}
+  else if(text.indexOf('@@RECORD')>=0){tag='@@RECORD';}
+  if(!tag){return null;}
+  var i=text.indexOf(tag);
   var start=text.indexOf('{',i);
   if(start<0){return null;}
   /* 手动找配对的右括号（JSON 里可能有嵌套） */
@@ -4569,9 +4591,98 @@ function parseAIRecord(text){
   if(end<0){return null;}
   try{
     var o=JSON.parse(text.slice(start,end+1));
-    if(!o||!(Number(o.amount)>0)){return null;}
+    if(!o){return null;}
+    /* 老格式没有 kind，默认当花费 */
+    if(!o.kind){o.kind='expense';}
+    /* 花费必须有正数金额，其他类型不强求 */
+    if(o.kind==='expense'&&!(Number(o.amount)>0)){return null;}
+    if(o.kind==='prep'&&!o.name){return null;}
+    if(o.kind==='todo'&&!o.text){return null;}
+    if(o.kind==='outfit'&&!o.desc){return null;}
     return {obj:o,raw:text.slice(i,end+1)};
   }catch(e){return null;}
+}
+/* 找一个成员 id：优先按名字匹配，匹配不上就用自己，再不行用第一个 */
+function resolveMemberId(name){
+  var members=aliveMembers(),i;
+  if(name){
+    for(i=0;i<members.length;i++){
+      if(members[i].name===String(name).trim()){return members[i].id;}
+    }
+  }
+  var mine=myMember();
+  if(mine){return mine.id;}
+  return members.length?members[0].id:'';
+}
+/* 日期兜底：AI 给的不合法就用今天 */
+function safeDate(s){
+  if(s&&/^\d{4}-\d{2}-\d{2}$/.test(String(s).trim())){return String(s).trim();}
+  return todayStr();
+}
+/* @@ADD 总入口：按 kind 分派 */
+function applyAIAdd(o){
+  var k=o.kind||'expense';
+  if(k==='expense'){confirmAIRecord(o);return;}
+  if(k==='prep'){confirmAIPrep(o);return;}
+  if(k==='todo'){confirmAITodo(o);return;}
+  if(k==='outfit'){confirmAIOutfit(o);return;}
+  showToast('AI 给了个看不懂的类型：'+k);
+}
+/* 必买物品 */
+function confirmAIPrep(o){
+  var cats=['服饰装备','个护美妆','药品保健','证件','食品','其他'];
+  var cat=o.category||'其他',okc=false,i;
+  for(i=0;i<cats.length;i++){if(cats[i]===cat){okc=true;break;}}
+  if(!okc){cat='其他';}
+  var price=Number(o.price)||0;
+  var owner=resolveMemberId(o.owner);
+  var body='物品：'+o.name+'\n'+
+    '分类：'+cat+'\n'+
+    (price>0?('预估价：'+fmtMoney(price)+'\n'):'')+
+    '购买渠道：'+(o.channel||'待定')+'\n'+
+    '负责人：'+(owner?memberNameById(owner):'未指定')+'\n'+
+    '\n加到必买清单吗？';
+  showConfirm('AI 帮你加进必买清单',body,function(){
+    state.data.prepItems.push({
+      id:genId(),category:cat,name:String(o.name).trim(),
+      price:price,channel:o.channel||'待定',owner:owner,
+      bought:false,overdue:false,_ts:Date.now()
+    });
+    saveData();showToast('已加入必买清单');renderAll();
+  });
+}
+/* 待办（订票这种） */
+function confirmAITodo(o){
+  var date=safeDate(o.date);
+  var owner=resolveMemberId(o.owner);
+  var body='内容：'+o.text+'\n'+
+    '日期：'+fmtDate(date)+'\n'+
+    '负责人：'+(owner?memberNameById(owner):'未指定')+'\n'+
+    '\n加到待办里吗？';
+  showConfirm('AI 帮你加个待办',body,function(){
+    var t={id:genId(),date:date,text:String(o.text).trim(),
+           owner:owner,done:false,_ts:Date.now()};
+    state.data.todos.push(t);saveData();
+    var dp=t.date.split('-');
+    if(dp.length===3){state.calYear=parseInt(dp[0],10);state.calMonth=parseInt(dp[1],10)-1;state.calSel=t.date;}
+    showToast('已加入待办');renderAll();
+  });
+}
+/* 穿搭 */
+function confirmAIOutfit(o){
+  var date=safeDate(o.date);
+  var person=o.person?String(o.person).trim():(currentNickname()||'未署名');
+  var body='日期：'+fmtDate(date)+'\n'+
+    '谁：'+person+'\n'+
+    '搭配：'+o.desc+'\n'+
+    '\n记到穿搭里吗？';
+  showConfirm('AI 帮你记个穿搭',body,function(){
+    state.data.outfits.push({
+      id:genId(),date:date,person:person,
+      desc:String(o.desc).trim(),_ts:Date.now()
+    });
+    saveData();showToast('已记录穿搭');renderAll();
+  });
 }
 /* 把 AI 解析出的对象转成真正的账目并确认入账 */
 function confirmAIRecord(o){
@@ -4667,8 +4778,8 @@ function sendAIMessage(text){
       var rec=parseAIRecord(fullText);
       if(rec){
         var clean=fullText.replace(rec.raw,'').replace(/\n{3,}/g,'\n\n').trim();
-        updateLastAIMessage(clean||'我帮你记一笔（见下方确认框）');
-        setTimeout(function(){confirmAIRecord(rec.obj);},400);
+        updateLastAIMessage(clean||'好，我帮你加上（见下方确认框）');
+        setTimeout(function(){applyAIAdd(rec.obj);},400);
       }
       saveAIHistory();
     },
@@ -4688,16 +4799,66 @@ function sendAIMessage(text){
     }
   );
 }
+/* ---------- 返回键 / 浏览器后退 统一管理 ----------
+   手机上从 AI 面板按返回键，原来会直接退出整个应用（因为压根没往历史里放东西）。
+   现在每打开一层浮层就 pushState 一条，返回键先关浮层，关完了才真的退出。 */
+var uiStack=[];      /* 每项 {name:'ai', close:fn} */
+function pushUILayer(name,closeFn){
+  /* 同名的先清掉，避免重复叠加 */
+  for(var i=uiStack.length-1;i>=0;i--){
+    if(uiStack[i].name===name){uiStack.splice(i,1);}
+  }
+  uiStack.push({name:name,close:closeFn});
+  try{history.pushState({qgLayer:name,depth:uiStack.length},'',location.href);}catch(e){}
+}
+/* 用户主动点了关闭按钮：把历史里那条也退掉，不然会多出一次空的返回 */
+function popUILayer(name){
+  var idx=-1,i;
+  for(i=uiStack.length-1;i>=0;i--){if(uiStack[i].name===name){idx=i;break;}}
+  if(idx<0){return;}
+  var layer=uiStack.splice(idx,1)[0];
+  /* 必须真的关掉；只摘栈项的话弹层还留在屏幕上 */
+  try{layer.close&&layer.close();}catch(e){}
+  if(history.state&&history.state.qgLayer){
+    uiStack.__skip=(uiStack.__skip||0)+1;   /* 标记：接下来这次 popstate 是我自己触发的 */
+    try{history.back();}catch(e){uiStack.__skip=0;}
+  }
+}
+window.addEventListener('popstate',function(){
+  /* 自己调 history.back() 引起的，浮层已经关了，别再关一层 */
+  if(uiStack.__skip>0){uiStack.__skip--;return;}
+  if(uiStack.length){
+    var top=uiStack.pop();
+    try{top.close&&top.close();}catch(e){}
+    /* 还有更下面的浮层 → 补一条历史，保证下次返回键还能接着关 */
+    if(uiStack.length){
+      try{history.pushState({qgLayer:uiStack[uiStack.length-1].name,depth:uiStack.length},'',location.href);}catch(e){}
+    }
+  }
+});
+/* 确认框 / 表单弹层也纳入返回键管理 */
+function closeTopModal(){
+  var cm=document.getElementById('confirmModal');
+  var fm=document.getElementById('formModal');
+  if(cm&&cm.classList.contains('show')){cm.classList.remove('show');return true;}
+  if(fm&&fm.classList.contains('show')){fm.classList.remove('show');return true;}
+  return false;
+}
 /* 打开/关闭 AI 面板 */
 function openAIPanel(){
   document.getElementById('aiPanel').classList.add('open');
   document.getElementById('aiBackdrop').classList.add('open');
+  pushUILayer('ai',function(){
+    document.getElementById('aiPanel').classList.remove('open');
+    document.getElementById('aiBackdrop').classList.remove('open');
+  });
   /* 焦点放到输入框 */
   setTimeout(function(){document.getElementById('aiInput').focus();},300);
 }
 function closeAIPanel(){
   document.getElementById('aiPanel').classList.remove('open');
   document.getElementById('aiBackdrop').classList.remove('open');
+  popUILayer('ai');
 }
 function toggleAIPanel(){
   if(document.getElementById('aiPanel').classList.contains('open')){closeAIPanel();}
@@ -4780,7 +4941,14 @@ function initAIModule(){
 function init(){
   state.migrated_={};
   /* 调试钩子（便于排查同步问题，不影响功能） */
-  try{window.__qg={state:state,auth:auth};}catch(e){}
+  /* 调试钩子：主脚本整体在 IIFE 里，外部（含自动化测试）拿不到内部函数，
+     统一从这里暴露。uiStack 用 getter，保证读到的是实时引用而不是快照。 */
+  try{window.__qg={state:state,auth:auth,
+    parseAIRecord:parseAIRecord,applyAIAdd:applyAIAdd,
+    pushUILayer:pushUILayer,popUILayer:popUILayer,
+    resolveMemberId:resolveMemberId,safeDate:safeDate,
+    computeSettlement:computeSettlement,budgetAlert:budgetAlert,
+    get uiStack(){return uiStack;}};}catch(e){}
   initWorkspace();
   handleJoinUrlParam();  /* 处理 URL 中的 ?join=邀请码 */
   renderCountdown();
