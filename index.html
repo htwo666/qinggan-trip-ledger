@@ -931,13 +931,49 @@ function svgIcon(name){return '<svg viewBox="0 0 24 24" fill="none">'+(ICONS[nam
    ============================================================ */
 var LS_KEY='qinggan_accounting_workspace';
 /* 团队空间缓存（云端）与个人空间缓存（仅本地）分离 */
-function getLSCache(mode){
+/* 缓存 key 必须带上 workspaceId，否则切到另一个团队会读到上一个团队的缓存
+   （这就是"不同团队数据互通"的根源）。未登录时退回 team/personal 两个槽。 */
+function cacheKey(mode){
+  var wsId=(auth&&auth.currentWs&&auth.currentWs.id)?auth.currentWs.id:null;
+  if(wsId){return LS_KEY+'_ws_'+wsId;}
   var key=mode||state.spaceMode||'team';
-  try{return JSON.parse(localStorage.getItem(LS_KEY+'_cache_'+key)||'null');}catch(e){return null;}
+  return LS_KEY+'_cache_'+key;
+}
+function getLSCache(mode){
+  try{
+    var d=JSON.parse(localStorage.getItem(cacheKey(mode))||'null');
+    if(!d){return null;}
+    /* 纵深防御：缓存里盖了空间印章，对不上就丢弃。
+       宁可白屏一下从云端重拉，也不能把别的团队的数据渲染出来。 */
+    var cur=(auth&&auth.currentWs&&auth.currentWs.id)?auth.currentWs.id:null;
+    if(cur&&d._wsId&&d._wsId!==cur){return null;}
+    return d;
+  }catch(e){return null;}
 }
 function setLSCache(d,mode){
-  var key=mode||state.spaceMode||'team';
-  try{localStorage.setItem(LS_KEY+'_cache_'+key,JSON.stringify(d));}catch(e){}
+  try{
+    var cur=(auth&&auth.currentWs&&auth.currentWs.id)?auth.currentWs.id:null;
+    if(cur&&d){d._wsId=cur;}
+    localStorage.setItem(cacheKey(mode),JSON.stringify(d));
+  }catch(e){}
+}
+/* 清理超过 30 天没用过的空间缓存，避免 localStorage 爆掉 */
+function pruneOldCaches(){
+  try{
+    var now=Date.now(),keys=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf(LS_KEY+'_ws_')===0){keys.push(k);}
+    }
+    if(keys.length<=12){return;}
+    for(var j=0;j<keys.length;j++){
+      try{
+        var d=JSON.parse(localStorage.getItem(keys[j])||'null');
+        var ts=(d&&d._ts)||0;
+        if(ts&&(now-ts)>30*24*3600*1000){localStorage.removeItem(keys[j]);}
+      }catch(e){}
+    }
+  }catch(e){}
 }
 function getLSWorkspaceId(){return localStorage.getItem(LS_KEY+'_id');}
 function setLSWorkspaceId(id){localStorage.setItem(LS_KEY+'_id',id);}
@@ -1253,6 +1289,12 @@ function ensureWorkspaces(cb){
 /* state.data 转 records 数组 */
 function dataToRecords(data){
   var out=[];
+  /* 纵深防御：数据印章和当前空间不符时拒绝推送，避免污染云端 */
+  var curWs=(auth&&auth.currentWs&&auth.currentWs.id)?auth.currentWs.id:null;
+  if(curWs&&data&&data._wsId&&data._wsId!==curWs){
+    try{console.warn('[同步] 数据归属'+data._wsId+'，当前空间'+curWs+'，已拒绝推送');}catch(e){}
+    return out;
+  }
   for(var t=0;t<DATA_TYPES.length;t++){
     var type=DATA_TYPES[t],kind=KIND_MAP[type],arr=data[type]||[];
     for(var i=0;i<arr.length;i++){
@@ -1536,10 +1578,12 @@ function activateWorkspace(ws,cb){
   state.spaceMode=isPersonal?'personal':'team';
   setLSSpaceMode(state.spaceMode);
   if(ws.kind==='personal'){auth.personalWs=ws;}else{auth.teamWs=ws;}
-  /* 先用本地缓存渲染，避免白屏 */
-  var cached=getLSCache(state.spaceMode);
-  if(cached){state.data=normalizeData(cached,isPersonal);}
+  /* 先用本地缓存渲染，避免白屏。
+     注意 auth.currentWs 已在上面赋值，所以 getLSCache 会命中本空间专属的 key */
+  var cached=getLSCache();
+  if(cached){state.data=normalizeData(cached,isPersonal,true);}
   else{state.data=buildDefaultData(isPersonal);}
+  pruneOldCaches();
   applySpaceModeUI();
   renderAll();
   setSyncStatus('connecting');
@@ -1842,29 +1886,54 @@ function initWorkspace(){
   state.personalData.prepItems=filterPreset(state.personalData.prepItems,'pi');
   state.personalData.todos=filterPreset(state.personalData.todos,'td');
   /* 6. 字段补齐（防止老数据缺字段） */
-  state.teamData=normalizeData(state.teamData,false);
-  state.personalData=normalizeData(state.personalData,true);
+  state.teamData=normalizeData(state.teamData,false,!!teamCached);
+  state.personalData=normalizeData(state.personalData,true,!!personalCached);
   /* 7. 设置当前激活空间的数据指针 */
   state.data=(state.spaceMode==='personal')?state.personalData:state.teamData;
   /* 8. 应用空间模式到 body class（主题切换） */
   applySpaceModeUI();
 }
 /* 字段补齐（防止老数据缺字段） */
-function normalizeData(d,isPersonal){
+/* isExisting=true 表示 d 来自云端或本地缓存（不是全新空间）。
+   这种情况下"成员列表为空"是用户真实操作的结果，绝不能回填预设 4 人
+   —— 否则用户删了成员一刷新就变回小美/阿杰/丸子/老王。 */
+function normalizeData(d,isPersonal,isExisting){
   if(!d){return buildDefaultData(isPersonal);}
-  if(!d.prepaid||!d.prepaid.length){d.prepaid=isPersonal?[]:PRESET_PREPAID.map(function(x){var y=Object.assign({},x);y._ts=Date.now();return y;});}
   if(!d.expenses){d.expenses=[];}
   if(!d.prepItems){d.prepItems=[];}
   if(!d.outfits){d.outfits=[];}
   if(!d.todos){d.todos=[];}
-  if(!d.members||!d.members.length){
-    d.members=isPersonal
-      ?[{id:'m0',name:'我',_ts:Date.now()}]
-      :MEMBERS.map(function(n,i){return {id:'m'+i,name:n,_ts:Date.now()};});
-  }
   if(!d.prepTodos){d.prepTodos=[];}
+  if(!d.prepaid){d.prepaid=[];}
+  if(!d.members){d.members=[];}
+  /* 只有全新空间才注入预设内容 */
+  if(!isExisting){
+    if(!d.prepaid.length&&!isPersonal){
+      d.prepaid=PRESET_PREPAID.map(function(x){var y=Object.assign({},x);y._ts=Date.now();return y;});
+    }
+    if(!d.members.length){
+      d.members=isPersonal
+        ?[{id:'m0',name:'我',_ts:Date.now()}]
+        :MEMBERS.map(function(n,i){return {id:'m'+i,name:n,_ts:Date.now()};});
+    }
+  }
+  /* 兜底：一个人都没有的话至少留一个，否则记账没法选付款人 */
+  if(!aliveList(d.members).length){
+    var seed=isPersonal?'我':'我';
+    d.members=(d.members||[]).concat([{id:genId(),name:seed,_ts:Date.now()}]);
+  }
   return d;
 }
+/* 过滤掉墓碑（被删除的条目） */
+function aliveList(arr){
+  var out=[];
+  for(var i=0;i<(arr||[]).length;i++){
+    if(arr[i]&&!arr[i]._deleted){out.push(arr[i]);}
+  }
+  return out;
+}
+/* 取当前存活的成员列表 —— 全站统一用这个，不要直接用 state.data.members */
+function aliveMembers(){return aliveList(state.data&&state.data.members);}
 /* 应用空间模式到 UI（body class、切换器激活态、横幅标题、同步条提示） */
 function applySpaceModeUI(){
   var isPersonal=state.spaceMode==='personal';
@@ -1887,7 +1956,8 @@ function applySpaceModeUI(){
   }
   if(sub){
     if(!logged){
-      sub.textContent=isPersonal?'私人记账 · 本地模式':'4人 11天自驾 · 2026-09-25 至 10-05';
+      var bn=Math.max(1,aliveMembers().length);
+      sub.textContent=isPersonal?'私人记账 · 本地模式':(bn+'人 11天自驾 · 2026-09-25 至 10-05');
     }else if(isPersonal){
       sub.textContent='私密云端 · 只有你能看到 · 多设备同步';
     }else{
@@ -1968,7 +2038,11 @@ function mergeData(local,remote){
   if(!local){return remote;}
   var types=['prepItems','prepaid','expenses','outfits','todos','members','prepTodos'];
   var merged={};
-  for(var t in local){if(local.hasOwnProperty(t)&&types.indexOf(t)===-1){merged[t]=local[t];}}
+  for(var t in local){
+    if(local.hasOwnProperty(t)&&types.indexOf(t)===-1&&t!=='_wsId'){merged[t]=local[t];}
+  }
+  /* _wsId 始终跟随当前空间，不参与合并 */
+  if(auth&&auth.currentWs&&auth.currentWs.id){merged._wsId=auth.currentWs.id;}
   for(var i=0;i<types.length;i++){
     var type=types[i];
     var localArr=local[type]||[],remoteArr=remote[type]||[];
@@ -2481,21 +2555,28 @@ function renderPrep(){
   /* 添加/删除成员 */
   var addMemberBtn=p.querySelector('[data-action="addMember"]');
   if(addMemberBtn){addMemberBtn.onclick=function(){
-    if(state.data.members.length>=8){showToast('最多 8 位成员');return;}
-    state.data.members.push({id:genId(),name:'成员'+(state.data.members.length+1),_ts:Date.now()});
-    saveData();renderPrep();
+    var alive=aliveMembers();
+    if(alive.length>=12){showToast('最多 12 位成员');return;}
+    state.data.members.push({id:genId(),name:'成员'+(alive.length+1),_ts:Date.now()});
+    saveData();renderPrep();renderCurrentPanel();
   };}
   var delMemberBtns=p.querySelectorAll('[data-action="delMember"]');
   for(var dm=0;dm<delMemberBtns.length;dm++){
     delMemberBtns[dm].onclick=function(){
       var id=this.getAttribute('data-id');
-      if(state.data.members.length<=1){showToast('至少保留 1 位成员');return;}
+      if(aliveMembers().length<=1){showToast('至少保留 1 位成员');return;}
       var name=memberNameById(id);
-      showConfirm('删除成员','确定删除成员「'+name+'」吗？该成员负责的物品不会删除。',function(){
+      showConfirm('删除成员','确定删除成员「'+name+'」吗？\n\n该成员负责的物品不会删除，已记的账目仍保留（结算时会显示为"已退出"）。',function(){
+        /* 用墓碑标记而不是直接删除，否则云端的旧记录会在下次同步时"复活"
+           （这就是"删了成员又变回预设那几个"的根源） */
         for(var mz=0;mz<state.data.members.length;mz++){
-          if(state.data.members[mz].id===id){state.data.members.splice(mz,1);break;}
+          if(state.data.members[mz].id===id){
+            state.data.members[mz]._deleted=true;
+            state.data.members[mz]._ts=Date.now();
+            break;
+          }
         }
-        saveData();renderPrep();
+        saveData();renderPrep();renderCurrentPanel();
       });
     };
   }
@@ -2511,32 +2592,36 @@ function renderPrep(){
 /* ---- 成员分工辅助函数 ---- */
 function memberNameById(id){
   if(!id){return '未分配';}
-  for(var i=0;i<state.data.members.length;i++){if(state.data.members[i].id===id){return state.data.members[i].name;}}
+  var all=(state.data&&state.data.members)||[];
+  for(var i=0;i<all.length;i++){
+    if(all[i].id===id){return all[i].name+(all[i]._deleted?'（已退出）':'');}
+  }
   return '未分配';
 }
 function memberColor(i){var cs=['#2d8b8b','#f0a04b','#9b59b6','#3498db','#e85d5d','#16a085','#e67e22','#7f8c8d'];return cs[i%cs.length];}
 function ownerBadge(ownerId){
-  var i=-1;
-  for(var k=0;k<state.data.members.length;k++){if(state.data.members[k].id===ownerId){i=k;break;}}
-  var name=(i>=0)?state.data.members[i].name:'未分配';
+  var mm=aliveMembers(),i=-1;
+  for(var k=0;k<mm.length;k++){if(mm[k].id===ownerId){i=k;break;}}
+  var name=(i>=0)?mm[i].name:memberNameById(ownerId);
   var col=(i>=0)?memberColor(i):'#95a5a6';
   return '<span class="item-owner" style="color:'+col+';background:'+col+'1a">'+escapeHtml(name)+'</span>';
 }
 /* 待办负责人下拉选项 */
 function memberSelectOptions(selId){
   var html='<option value="">未分配</option>';
-  for(var i=0;i<state.data.members.length;i++){
-    var m=state.data.members[i];
+  var mlist=aliveMembers();
+  for(var i=0;i<mlist.length;i++){
+    var m=mlist[i];
     html+='<option value="'+m.id+'"'+(selId===m.id?' selected':'')+'>'+escapeHtml(m.name)+'</option>';
   }
   return html;
 }
 /* ---- 成员分工详情弹窗 ---- */
 function showMemberDetail(memberId){
-  var idx=-1;
-  for(var k=0;k<state.data.members.length;k++){if(state.data.members[k].id===memberId){idx=k;break;}}
+  var mmm=aliveMembers(),idx=-1;
+  for(var k=0;k<mmm.length;k++){if(mmm[k].id===memberId){idx=k;break;}}
   if(idx<0){showToast('成员不存在');return;}
-  var mem=state.data.members[idx];
+  var mem=mmm[idx];
   var col=memberColor(idx);
   /* 收集该成员负责的物品 */
   var myItems=[];
@@ -2670,8 +2755,8 @@ function renderPrepCalendar(todos,today){
 }
 /* ---- 成员分工可视化 ---- */
 function renderMemberDivision(prepItems,todos){
-  var members=state.data.members||[];
-  var html='<div class="member-card"><div class="card-title">'+svgIcon('users')+'成员分工 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（点击名字可直接改名，添加物品/待办时可指定负责人）</span></div>';
+  var members=aliveMembers();
+  var html='<div class="member-card"><div class="card-title">'+svgIcon('users')+'成员分工 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（当前 '+members.length+' 人 · 点击名字可改名 · 可增删成员，AA 自动按实际人数算）</span></div>';
   /* 成员编辑区 */
   html+='<div class="member-grid">';
   for(var i=0;i<members.length;i++){
@@ -2757,13 +2842,14 @@ function renderExpense(){
     if(data.expenses[ei].type==='collective'){enCollective+=Number(data.expenses[ei].amount)||0;}
     else{enPersonal+=Number(data.expenses[ei].amount)||0;}
   }
-  var prePerPerson=preSum/4;
-  var enPerPerson=enCollective/4;
+  var headN=Math.max(1,aliveMembers().length);
+  var prePerPerson=preSum/headN;
+  var enPerPerson=enCollective/headN;
   var stats='<div class="stat-grid">'+
     '<div class="stat-card good"><div class="label">预付合计 · 已AA</div><div class="value">'+fmtMoney(preSum)+'</div><div class="sub ok">人均 '+fmtMoney(prePerPerson)+' 已结清</div></div>'+
     '<div class="stat-card warn"><div class="label">途中集体 · 待AA</div><div class="value expense">'+fmtMoney(enCollective)+'</div><div class="sub">参与均摊</div></div>'+
     '<div class="stat-card"><div class="label">个人物品</div><div class="value">'+fmtMoney(enPersonal)+'</div><div class="sub">不均摊</div></div>'+
-    '<div class="stat-card bad"><div class="label">途中待AA人均</div><div class="value">'+fmtMoney(enPerPerson)+'</div><div class="sub">÷4人 · 行程结束结算</div></div>'+
+    '<div class="stat-card bad"><div class="label">途中待AA人均</div><div class="value">'+fmtMoney(enPerPerson)+'</div><div class="sub">÷'+headN+'人 · 行程结束结算</div></div>'+
   '</div>';
   /* 工具栏 */
   var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addExpenseBtn">'+svgIcon('plus')+'记一笔</button><button class="btn btn-outline btn-sm" id="exportCsvBtn">'+svgIcon('download')+'导出CSV</button></div>';
@@ -2831,7 +2917,7 @@ function showExpenseForm(){
   var catOpts='';
   for(var i=0;i<EXPENSE_CATEGORIES.length;i++){catOpts+='<option>'+EXPENSE_CATEGORIES[i]+'</option>';}
   /* 付款人选项：团队成员列表 */
-  var members=state.data.members||[];
+  var members=aliveMembers();
   var payerOpts='<option value="">— 选择付款人 —</option>';
   for(var m=0;m<members.length;m++){
     payerOpts+='<option value="'+escapeHtml(members[m].id)+'">'+escapeHtml(members[m].name)+'</option>';
@@ -2998,7 +3084,8 @@ function showOutfitForm(){
   var today=todayStr();
   /* 从已有记录中提取用过的名字，生成 datalist 建议 */
   var nameSet={};
-  for(var i=0;i<MEMBERS.length;i++){nameSet[MEMBERS[i]]=1;}
+  var omm=aliveMembers();
+  for(var i=0;i<omm.length;i++){nameSet[omm[i].name]=1;}
   for(var j=0;j<state.data.outfits.length;j++){
     if(state.data.outfits[j].person){nameSet[state.data.outfits[j].person]=1;}
   }
@@ -3120,17 +3207,27 @@ function showTodoForm(){
 /* ============================================================
    模块 5：数据汇总（图表 + AA 分摊 + 预算追踪）
    ============================================================ */
-/* AA 结算助手：自动计算谁应该给谁多少钱
+/* AA 结算助手：净额抵消算法（不是无脑均摊，转账次数最少）
+
+   举例：3 个人，A 花 30，B 花 30，C 没花钱
+     集体总额 = 30+30+0 = 60，每人应承担 60/3 = 20
+     A: 实付30 - 应承担20 = +10 → 应收 10
+     B: 实付30 - 应承担20 = +10 → 应收 10
+     C: 实付 0 - 应承担20 = -20 → 应付 20
+     结算清单：C 付给 A 10 元，C 付给 B 10 元
+     A 和 B 之间不用转账（净额法自动抵消，不会让所有人两两互转）
+
    算法：
-   - 集体AA账目：付款人先垫付，应由全员均摊（÷N人）
-   - 个人物品：付款人自己承担，不参与均摊
-   - 老数据无 payer 字段：fallback 为"全部人均摊"（等同原 AA 算法）
-   - 每人：净额 = 实付 - 应承担
-   - 净额 > 0：应收钱；净额 < 0：应付钱
-   - 贪心匹配：最大的应收方先从最大的应付方收钱
+   - 集体AA账目：付款人先垫付，由全体存活成员均摊（÷实际人数，不是固定4）
+   - 个人物品：付款人自己承担，完全不参与均摊
+   - 每人净额 = 实付 - 应承担
+   - 净额 > 0 → 垫多了，应收钱；净额 < 0 → 花少了，应付钱
+   - 贪心匹配：金额最大的应付方优先还给金额最大的应收方
+     这样转账笔数最少（n 个人最多 n-1 笔，而不是两两结算的 n(n-1)/2 笔）
+   - 已平衡的人（净额≈0）不出现在转账清单里，不用白折腾
 */
 function renderSettlement(data){
-  var members=data.members||[];
+  var members=aliveList(data.members);
   var expenses=data.expenses||[];
   var N=members.length;
   if(N<2){return '';}
@@ -3245,8 +3342,9 @@ function renderSummary(){
     if(!byDate[e.date]){byDate[e.date]=0;}
     byDate[e.date]+=amt;
   }
-  var prePerPerson=preSum/4;          /* 预付已AA，人均 */
-  var enPerPerson=enCollective/4;     /* 途中集体待AA，人均 */
+  var sumN=Math.max(1,aliveList(data.members).length);
+  var prePerPerson=preSum/sumN;       /* 预付已AA，按实际人数 */
+  var enPerPerson=enCollective/sumN;  /* 途中集体待AA，按实际人数 */
   var totalPerPerson=prePerPerson+enPerPerson;
   var tripDays=11;
   var totalDailyBudget=DAILY_BUDGET*tripDays;
@@ -3278,7 +3376,7 @@ function renderSummary(){
     '<tr><td>预付合计</td><td>'+fmtMoney(preSum)+'</td><td style="color:var(--success)">已AA结清（机票+租车+住宿）</td></tr>'+
     '<tr><td>预付人均</td><td>'+fmtMoney(prePerPerson)+'</td><td style="color:var(--success)">每人已付，无需再结算</td></tr>'+
     '<tr><td>途中集体</td><td class="expense">'+fmtMoney(enCollective)+'</td><td>待AA（餐饮/加油/门票等）</td></tr>'+
-    '<tr><td>途中待AA人均</td><td class="expense">'+fmtMoney(enPerPerson)+'</td><td>÷4人，行程结束结算</td></tr>'+
+    '<tr><td>途中待AA人均</td><td class="expense">'+fmtMoney(enPerPerson)+'</td><td>÷'+sumN+'人，行程结束结算</td></tr>'+
     '<tr><td><strong>每人总计</strong></td><td><strong>'+fmtMoney(totalPerPerson)+'</strong></td><td>预付已付 + 途中待付</td></tr>'+
     '<tr><td>个人物品</td><td>'+fmtMoney(enPersonal)+'</td><td>各自承担，不参与AA</td></tr>'+
     '</tbody></table></div></div>';
@@ -3524,7 +3622,7 @@ function buildAISystemPrompt(){
   if(isPersonal){
     prompt+='\n【空间模式】用户当前在"个人空间"（私人记账），仅本地保存。请聚焦于个人旅行体验，不要假设有团队协作场景。\n';
   }else{
-    prompt+='\n【空间模式】用户当前在"团队空间"（4 人共享记账），多人协作同步。可适当提醒AA结算、分工等团队场景。\n';
+    prompt+='\n【空间模式】用户当前在"团队空间"（'+Math.max(1,aliveMembers().length)+' 人共享记账），多人协作同步。可适当提醒AA结算、分工等团队场景。\n';
   }
   prompt+='\n【能力】\n'+
     '1. 行程规划与建议：基于11天青甘大环线行程（兰州→西宁→祁连→张掖→敦煌→察尔汗→大柴旦→德令哈→茶卡→青海湖→西宁→兰州）\n'+
