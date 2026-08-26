@@ -279,6 +279,20 @@ tr:hover{background:rgba(45,139,139,0.03);}
 .expense-item.locked .del{display:none;}
 .expense-item .lock-tag{font-size:0.68rem;color:var(--success);display:flex;align-items:center;gap:2px;}
 .expense-item .lock-tag svg{width:12px;height:12px;}
+/* ========== 参与人勾选（不等额分摊） ========== */
+.part-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+.part-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border:1px solid var(--border);
+  border-radius:16px;font-size:0.78rem;cursor:pointer;background:#fff;transition:all .15s;user-select:none;}
+.part-chip input{margin:0;width:14px;height:14px;accent-color:var(--primary);cursor:pointer;}
+.part-chip:has(input:checked){border-color:var(--primary);background:var(--primary-bg);color:var(--primary-dark);font-weight:600;}
+/* 兼容不支持 :has 的老浏览器（微信X5）：靠 JS 加 class */
+.part-chip.on{border-color:var(--primary);background:var(--primary-bg);color:var(--primary-dark);font-weight:600;}
+/* ========== 成员认领 ========== */
+.claim-btn{border:none;background:transparent;color:var(--text-light);font-size:0.62rem;
+  cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1.4;}
+.claim-btn:hover{background:var(--primary-bg);color:var(--primary);}
+.claim-btn.mine{background:var(--primary);color:#fff;font-weight:600;}
+.claim-btn.taken{color:#bbb;cursor:not-allowed;}
 /* ========== 付款人标签 ========== */
 .expense-item .payer-tag{font-size:0.66rem;background:#e8f5f3;color:var(--primary-dark);padding:1px 6px;border-radius:8px;border:1px solid var(--primary-light);white-space:nowrap;margin-left:2px;}
 body.space-personal .expense-item .payer-tag{background:#fff3e0;color:#8a5a1a;border-color:var(--accent);}
@@ -1924,6 +1938,45 @@ function normalizeData(d,isPersonal,isExisting){
   }
   return d;
 }
+/* ---------- 成员认领：把登录账号和团队成员对应起来 ----------
+   存在 members[i].uid 字段。认领后记账默认自己付款，结算表里高亮"我"。
+   一个账号在一个空间只能认领一个成员，一个成员也只能被一个账号认领。 */
+function myUid(){
+  return (auth&&auth.session&&auth.session.user&&auth.session.user.id)?auth.session.user.id:'';
+}
+/* 我认领的成员对象，没认领返回 null */
+function myMember(){
+  var uid=myUid();
+  if(!uid){return null;}
+  var ms=aliveMembers();
+  for(var i=0;i<ms.length;i++){if(ms[i].uid===uid){return ms[i];}}
+  return null;
+}
+/* 认领某个成员（会先解绑我之前认领的） */
+function claimMember(mid,cb){
+  var uid=myUid();
+  if(!uid){showToast('请先登录再认领');cb&&cb();return;}
+  var all=(state.data&&state.data.members)||[];
+  var target=null,i;
+  for(i=0;i<all.length;i++){if(all[i].id===mid){target=all[i];break;}}
+  if(!target){showToast('成员不存在');cb&&cb();return;}
+  if(target.uid&&target.uid!==uid){showToast('「'+target.name+'」已被其他人认领');cb&&cb();return;}
+  var isCancel=(target.uid===uid);
+  /* 先解绑我原来认领的（保证一个账号只占一个成员） */
+  for(i=0;i<all.length;i++){
+    if(all[i].uid===uid){delete all[i].uid;all[i]._ts=Date.now();}
+  }
+  if(!isCancel){
+    target.uid=uid;
+    target._ts=Date.now();
+    /* 认领时顺手把成员名字改成我的昵称，除了名字是"成员N"这种默认名才改 */
+    var nick=displayName&&displayName();
+    if(nick&&/^成员\d+$/.test(target.name)){target.name=nick;}
+  }
+  saveData();
+  showToast(isCancel?'已取消认领':('已认领为「'+target.name+'」'));
+  cb&&cb();
+}
 /* 过滤掉墓碑（被删除的条目） */
 function aliveList(arr){
   var out=[];
@@ -1931,6 +1984,15 @@ function aliveList(arr){
     if(arr[i]&&!arr[i]._deleted){out.push(arr[i]);}
   }
   return out;
+}
+/* 渲染专用视图：剔除所有 _deleted 墓碑条目。
+   写操作请继续用 state.data（按 id 查找修改），只有"读来渲染"才用这个。 */
+function viewData(){
+  var s=state.data||{};
+  var v={},types=['prepItems','prepaid','expenses','outfits','todos','members','prepTodos'],i;
+  for(var k in s){if(s.hasOwnProperty(k)&&types.indexOf(k)===-1){v[k]=s[k];}}
+  for(i=0;i<types.length;i++){v[types[i]]=aliveList(s[types[i]]);}
+  return v;
 }
 /* 取当前存活的成员列表 —— 全站统一用这个，不要直接用 state.data.members */
 function aliveMembers(){return aliveList(state.data&&state.data.members);}
@@ -2304,7 +2366,7 @@ function renderCountdown(){
    ============================================================ */
 function renderPrep(){
   var p=document.getElementById('panel-prep');
-  var data=state.data;
+  var data=viewData();
   var prepItems=data.prepItems||[];
   var todos=data.todos||[];
   var today=todayStr();
@@ -2455,7 +2517,7 @@ function renderPrep(){
     todoDelBtns[tl].onclick=function(){
       var id=this.getAttribute('data-id');
       for(var i=0;i<state.data.todos.length;i++){
-        if(state.data.todos[i].id===id){state.data.todos.splice(i,1);break;}
+        if(state.data.todos[i].id===id){state.data.todos[i]._deleted=true;state.data.todos[i]._ts=Date.now();break;}
       }
       saveData();renderPrep();showToast('已删除');
     };
@@ -2481,7 +2543,7 @@ function renderPrep(){
       showConfirm('删除物品','确定删除这条物品记录吗？',function(){
         for(var bi=0;bi<state.data.prepItems.length;bi++){
           if(state.data.prepItems[bi].id===id){
-            state.data.prepItems.splice(bi,1);break;
+            state.data.prepItems[bi]._deleted=true;state.data.prepItems[bi]._ts=Date.now();break;
           }
         }
         saveData();renderPrep();showToast('已删除');
@@ -2580,6 +2642,14 @@ function renderPrep(){
       });
     };
   }
+  /* 认领成员（这是我） */
+  var claimBtns=p.querySelectorAll('[data-action="claimMember"]');
+  for(var cb2=0;cb2<claimBtns.length;cb2++){
+    claimBtns[cb2].onclick=function(){
+      if(this.disabled){return;}
+      claimMember(this.getAttribute('data-id'),function(){renderPrep();});
+    };
+  }
   /* 点击头像查看成员分工详情 */
   var viewBtns=p.querySelectorAll('[data-action="viewMember"]');
   for(var vbi=0;vbi<viewBtns.length;vbi++){
@@ -2625,13 +2695,15 @@ function showMemberDetail(memberId){
   var col=memberColor(idx);
   /* 收集该成员负责的物品 */
   var myItems=[];
-  for(var i=0;i<state.data.prepItems.length;i++){
-    if(state.data.prepItems[i].owner===memberId){myItems.push(state.data.prepItems[i]);}
+  var _pi=aliveList(state.data.prepItems);
+  for(var i=0;i<_pi.length;i++){
+    if(_pi[i].owner===memberId){myItems.push(_pi[i]);}
   }
   /* 收集该成员负责的待办 */
   var myTodos=[];
-  for(var t=0;t<state.data.todos.length;t++){
-    if(state.data.todos[t].owner===memberId){myTodos.push(state.data.todos[t]);}
+  var _td=aliveList(state.data.todos);
+  for(var t=0;t<_td.length;t++){
+    if(_td[t].owner===memberId){myTodos.push(_td[t]);}
   }
   var totalItems=myItems.length,totalTodos=myTodos.length;
   var doneItems=0,doneTodos=0;
@@ -2756,14 +2828,26 @@ function renderPrepCalendar(todos,today){
 /* ---- 成员分工可视化 ---- */
 function renderMemberDivision(prepItems,todos){
   var members=aliveMembers();
-  var html='<div class="member-card"><div class="card-title">'+svgIcon('users')+'成员分工 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（当前 '+members.length+' 人 · 点击名字可改名 · 可增删成员，AA 自动按实际人数算）</span></div>';
+  var uid=myUid();
+  var logged=!!(uid&&state.spaceMode==='team');
+  var hint=logged
+    ?'当前 '+members.length+' 人 · 点名字改名 · 点「这是我」认领，记账就默认你付款'
+    :'当前 '+members.length+' 人 · 点击名字可改名 · 可增删成员，AA 按实际人数算';
+  var html='<div class="member-card"><div class="card-title">'+svgIcon('users')+'成员分工 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（'+hint+'）</span></div>';
   /* 成员编辑区 */
   html+='<div class="member-grid">';
   for(var i=0;i<members.length;i++){
     var m=members[i];
-    html+='<div class="member-cell" style="position:relative"><button class="member-del" data-action="delMember" data-id="'+m.id+'">✕</button><div class="member-avatar" style="background:'+memberColor(i)+'" data-action="viewMember" data-id="'+m.id+'">'+escapeHtml((m.name||'?').charAt(0))+'</div><input class="member-name-input" data-id="'+m.id+'" value="'+escapeHtml(m.name)+'"><div style="font-size:0.66rem;color:var(--text-light);margin-top:2px">点击头像看分工</div></div>';
+    /* 认领状态：我认领的 / 别人认领的 / 没人认领 */
+    var claimCls='',claimTxt='这是我',claimDis='';
+    if(m.uid&&m.uid===uid){claimCls=' mine';claimTxt='✓ 我';}
+    else if(m.uid){claimCls=' taken';claimTxt='已认领';claimDis=' disabled';}
+    var claimBtn=logged
+      ?'<button class="claim-btn'+claimCls+'" data-action="claimMember" data-id="'+m.id+'"'+claimDis+'>'+claimTxt+'</button>'
+      :'<div style="font-size:0.66rem;color:var(--text-light);margin-top:2px">点击头像看分工</div>';
+    html+='<div class="member-cell" style="position:relative"><button class="member-del" data-action="delMember" data-id="'+m.id+'">✕</button><div class="member-avatar" style="background:'+memberColor(i)+'" data-action="viewMember" data-id="'+m.id+'">'+escapeHtml((m.name||'?').charAt(0))+'</div><input class="member-name-input" data-id="'+m.id+'" value="'+escapeHtml(m.name)+'">'+claimBtn+'</div>';
   }
-  if(members.length<8){
+  if(members.length<12){
     html+='<div class="member-cell" style="display:flex;align-items:center;justify-content:center"><button class="member-add" data-action="addMember">+</button></div>';
   }
   html+='</div>';
@@ -2820,7 +2904,7 @@ function showPrepForm(item){
    ============================================================ */
 function renderExpense(){
   var p=document.getElementById('panel-expense');
-  var data=state.data;
+  var data=viewData();
   /* 预付/expenses 已在 initWorkspace 初始化 */
   /* 今日要处理 */
   var today=todayStr();
@@ -2883,7 +2967,15 @@ function renderExpense(){
         var isC=ex.type==='collective';
         var payerName=ex.payer?memberNameById(ex.payer):'';
         var payerBadge=ex.payer?'<span class="payer-tag">付:'+escapeHtml(payerName)+'</span>':'';
-        enHtml+='<div class="expense-item"><div class="info"><div class="top"><span class="cat'+(isC?'':' personal')+'">'+(isC?'集体AA':'个人')+'</span><span style="font-size:0.78rem">'+escapeHtml(ex.category)+'</span>'+payerBadge+'</div><div style="font-size:0.72rem;color:var(--text-light);margin-top:2px">'+(ex.note?escapeHtml(ex.note):'无备注')+'</div></div><div class="amount">'+fmtMoney(ex.amount)+'</div><div class="del"><button data-action="delExp" data-id="'+ex.id+'">'+svgIcon('trash')+'</button></div></div>';
+        /* 不是全员参与的账目，标出参与人数（点击可看是谁） */
+        var partBadge='';
+        if(isC&&ex.parts&&ex.parts.length){
+          var pnames=[];
+          for(var pn=0;pn<ex.parts.length;pn++){pnames.push(memberNameById(ex.parts[pn]));}
+          partBadge='<span class="payer-tag" style="background:#eef6ff;color:#2b6cb0" title="'+
+            escapeHtml(pnames.join('、'))+'">仅'+ex.parts.length+'人分</span>';
+        }
+        enHtml+='<div class="expense-item"><div class="info"><div class="top"><span class="cat'+(isC?'':' personal')+'">'+(isC?'集体AA':'个人')+'</span><span style="font-size:0.78rem">'+escapeHtml(ex.category)+'</span>'+payerBadge+partBadge+'</div><div style="font-size:0.72rem;color:var(--text-light);margin-top:2px">'+(ex.note?escapeHtml(ex.note):'无备注')+'</div></div><div class="amount">'+fmtMoney(ex.amount)+'</div><div class="del"><button data-action="delExp" data-id="'+ex.id+'">'+svgIcon('trash')+'</button></div></div>';
       }
       enHtml+='</div>';
     }
@@ -2902,7 +2994,7 @@ function renderExpense(){
       showConfirm('删除账目','确定删除这笔记录吗？',function(){
         for(var i=0;i<state.data.expenses.length;i++){
           if(state.data.expenses[i].id===id){
-            state.data.expenses.splice(i,1);break;
+            state.data.expenses[i]._deleted=true;state.data.expenses[i]._ts=Date.now();break;
           }
         }
         saveData();renderExpense();showToast('已删除');
@@ -2925,7 +3017,29 @@ function showExpenseForm(){
   /* 个人空间默认付款人锁定为"我" */
   var isPersonal=state.spaceMode==='personal';
   var personalPayer=isPersonal&&members.length>0?members[0].id:'';
-  var payerDefault=isPersonal?personalPayer:'';
+  /* 团队空间：如果我认领了成员，付款人默认选我自己 */
+  var mine=myMember();
+  var payerDefault=isPersonal?personalPayer:(mine?mine.id:'');
+  /* 参与人勾选区：默认全选。只有集体AA才用得上 */
+  var partHtml='';
+  if(!isPersonal&&members.length>1){
+    partHtml='<div id="fPartWrap" class="form-row" style="flex-direction:column;align-items:stretch">'+
+      '<label style="display:flex;align-items:center;justify-content:space-between">'+
+        '<span>参与分摊的人</span>'+
+        '<span style="font-weight:400;font-size:0.68rem;color:var(--text-light)">'+
+          '<a href="javascript:void(0)" id="fPartAll" style="color:var(--primary)">全选</a> · '+
+          '<a href="javascript:void(0)" id="fPartNone" style="color:var(--text-light)">全不选</a>'+
+        '</span>'+
+      '</label>'+
+      '<div class="part-grid">';
+    for(var pm=0;pm<members.length;pm++){
+      partHtml+='<label class="part-chip"><input type="checkbox" class="fPart" value="'+
+        escapeHtml(members[pm].id)+'" checked><span>'+escapeHtml(members[pm].name)+'</span></label>';
+    }
+    partHtml+='</div>'+
+      '<div id="fPartHint" style="font-size:0.68rem;color:var(--text-light);margin-top:4px"></div>'+
+      '</div>';
+  }
   /* 团队空间：类别 + 分摊方式 一起；个人空间：只类别（分摊方式固定为个人物品） */
   var categoryAndTypeRow=isPersonal
     ?'<div class="form-row"><div style="flex:1"><label>类别</label><select id="fCategory">'+catOpts+'</select></div></div>'
@@ -2939,14 +3053,80 @@ function showExpenseForm(){
     '<div><label>金额 ¥</label><input type="number" id="fAmount" step="0.01" placeholder="0.00"></div></div>'+
     categoryAndTypeRow+typeHint+
     '<div class="form-row"><div style="flex:1"><label>付款人 '+(isPersonal?'':'（集体AA必填，便于结算）')+'</label><select id="fPayer" '+(isPersonal?'disabled':'')+'>'+payerOpts+'</select></div></div>'+
-    '<div class="form-row"><div style="flex:1"><label>备注</label><input type="text" id="fNote" placeholder="如：4人午餐"></div></div>'+
+    partHtml+
+    '<div class="form-row"><div style="flex:1"><label>备注</label><input type="text" id="fNote" placeholder="如：3人午餐，老王没吃"></div></div>'+
     '<button class="btn btn-primary btn-block" style="margin-top:12px" id="saveExpBtn">保存</button>';
   document.getElementById('formModal').classList.add('show');
   document.getElementById('closeForm').onclick=function(){document.getElementById('formModal').classList.remove('show');};
+  var fp=document.getElementById('fPayer');
   if(isPersonal){
-    var fp=document.getElementById('fPayer');
     if(fp&&personalPayer){fp.value=personalPayer;}
+  }else if(fp&&payerDefault){
+    fp.value=payerDefault;   /* 认领过成员的话默认选自己 */
   }
+  /* ---- 参与人勾选交互 ---- */
+  function getParts(){
+    var cbs=document.querySelectorAll('.fPart'),out=[];
+    for(var i=0;i<cbs.length;i++){if(cbs[i].checked){out.push(cbs[i].value);}}
+    return out;
+  }
+  function refreshPartHint(){
+    var hint=document.getElementById('fPartHint');
+    if(!hint){return;}
+    var parts=getParts();
+    var amt=parseFloat(document.getElementById('fAmount').value)||0;
+    var tSel=document.getElementById('fType');
+    var isCol=!tSel||tSel.value==='collective';
+    if(!isCol){hint.textContent='个人物品由付款人自付，不分摊';return;}
+    if(!parts.length){hint.innerHTML='<span style="color:var(--danger)">至少选 1 人参与</span>';return;}
+    if(amt>0){
+      hint.textContent=parts.length+' 人分摊，每人 '+fmtMoney(amt/parts.length)+
+        (parts.length<members.length?('（'+(members.length-parts.length)+' 人不参与）'):'');
+    }else{
+      hint.textContent=parts.length+' 人参与分摊'+
+        (parts.length<members.length?('，'+(members.length-parts.length)+' 人不参与'):'');
+    }
+  }
+  /* 同步 chip 的选中样式（微信 X5 内核不支持 :has，靠 class 兜底） */
+  function syncChips(){
+    var cbs=document.querySelectorAll('.fPart');
+    for(var i=0;i<cbs.length;i++){
+      var lab=cbs[i].parentNode;
+      if(!lab){continue;}
+      if(cbs[i].checked){
+        if(lab.className.indexOf('on')<0){lab.className+=' on';}
+      }else{
+        lab.className=lab.className.replace(/\s*\bon\b/g,'');
+      }
+    }
+  }
+  var partCbs=document.querySelectorAll('.fPart');
+  for(var pc=0;pc<partCbs.length;pc++){
+    partCbs[pc].onchange=function(){syncChips();refreshPartHint();};
+  }
+  syncChips();
+  var allBtn=document.getElementById('fPartAll');
+  if(allBtn){allBtn.onclick=function(){
+    var cbs=document.querySelectorAll('.fPart');
+    for(var i=0;i<cbs.length;i++){cbs[i].checked=true;}
+    syncChips();refreshPartHint();
+  };}
+  var noneBtn=document.getElementById('fPartNone');
+  if(noneBtn){noneBtn.onclick=function(){
+    var cbs=document.querySelectorAll('.fPart');
+    for(var i=0;i<cbs.length;i++){cbs[i].checked=false;}
+    syncChips();refreshPartHint();
+  };}
+  var amtIn=document.getElementById('fAmount');
+  if(amtIn){amtIn.oninput=refreshPartHint;}
+  var typeSel=document.getElementById('fType');
+  var partWrap=document.getElementById('fPartWrap');
+  if(typeSel){typeSel.onchange=function(){
+    /* 个人物品不需要选参与人 */
+    if(partWrap){partWrap.style.display=(this.value==='collective')?'':'none';}
+    refreshPartHint();
+  };}
+  refreshPartHint();
   document.getElementById('saveExpBtn').onclick=function(){
     var exp={
       id:genId(),
@@ -2961,6 +3141,12 @@ function showExpenseForm(){
     if(!exp.date){showToast('请选择日期');return;}
     if(exp.amount<=0){showToast('请输入有效金额');return;}
     if(exp.type==='collective'&&!exp.payer){showToast('集体AA账目请选择付款人');return;}
+    /* 集体AA：记下参与人。全员参与时不存 parts 字段，省空间也兼容老数据 */
+    if(exp.type==='collective'){
+      var parts=getParts();
+      if(partCbs.length&&!parts.length){showToast('请至少选 1 人参与分摊');return;}
+      if(parts.length&&parts.length<members.length){exp.parts=parts;}
+    }
     state.data.expenses.push(exp);saveData();
     document.getElementById('formModal').classList.remove('show');
     renderExpense();showToast('已记录');
@@ -2968,7 +3154,7 @@ function showExpenseForm(){
 }
 /* 导出 CSV */
 function exportExpensesCsv(){
-  var data=state.data;
+  var data=viewData();
   var rows='类型,日期,类别,金额,分摊,备注\n';
   for(var i=0;i<data.prepaid.length;i++){
     var p=data.prepaid[i];
@@ -2991,8 +3177,8 @@ function exportExpensesCsv(){
    ============================================================ */
 function renderOutfit(){
   var p=document.getElementById('panel-outfit');
-  var data=state.data;
-  if(!data.outfits){state.data.outfits=[];data=state.data;}
+  var data=viewData();
+  if(!data.outfits){state.data.outfits=[];data=viewData();}
   var today=todayStr();
   var todayIdx=daysBetween(TRIP_START,today);
   var todayDayNum=todayIdx>=0&&todayIdx<11?(todayIdx+1):null;
@@ -3063,7 +3249,7 @@ function renderOutfit(){
       var id=this.getAttribute('data-id');
       showConfirm('删除穿搭','确定删除这条穿搭记录吗？',function(){
         for(var i=0;i<state.data.outfits.length;i++){
-          if(state.data.outfits[i].id===id){state.data.outfits.splice(i,1);break;}
+          if(state.data.outfits[i].id===id){state.data.outfits[i]._deleted=true;state.data.outfits[i]._ts=Date.now();break;}
         }
         saveData();renderOutfit();showToast('已删除');
       });
@@ -3244,15 +3430,27 @@ function renderSettlement(data){
       hasPayerRecords=true;
     }
   }
-  /* 2. 统计每人应承担金额（集体AA均摊 + 个人物品自付） */
+  /* 2. 统计每人应承担金额（集体AA按参与人分摊 + 个人物品自付） */
   var owed={};
   for(i=0;i<N;i++){owed[members[i].id]=0;}
-  var collectiveTotal=0;
+  var collectiveTotal=0,hasUnequal=false;
   for(i=0;i<expenses.length;i++){
     var e2=expenses[i];
     var amt2=Number(e2.amount)||0;
     if(e2.type==='collective'){
       collectiveTotal+=amt2;
+      /* parts 为空 = 全员参与（兼容老数据）；有 parts = 只在这些人之间分 */
+      var pl=[],j;
+      if(e2.parts&&e2.parts.length){
+        for(j=0;j<e2.parts.length;j++){
+          if(owed.hasOwnProperty(e2.parts[j])){pl.push(e2.parts[j]);}
+        }
+        if(pl.length&&pl.length<N){hasUnequal=true;}
+      }
+      /* 参与人都被删了的话退回全员分摊，避免这笔钱没人承担 */
+      if(!pl.length){for(j=0;j<N;j++){pl.push(members[j].id);}}
+      var each=amt2/pl.length;
+      for(j=0;j<pl.length;j++){owed[pl[j]]+=each;}
     }else{
       /* 个人物品：付款人自付，老数据无 payer 则跳过 */
       if(e2.payer&&owed.hasOwnProperty(e2.payer)){
@@ -3260,9 +3458,6 @@ function renderSettlement(data){
       }
     }
   }
-  /* 集体AA按人头均摊到每人 */
-  var sharePerPerson=collectiveTotal/N;
-  for(i=0;i<N;i++){owed[members[i].id]+=sharePerPerson;}
   /* 3. 计算每人净额（实付 - 应承担） */
   var net={};
   for(i=0;i<N;i++){
@@ -3275,13 +3470,20 @@ function renderSettlement(data){
     settleHtml+='<div style="font-size:0.76rem;color:var(--accent);background:#fff6ea;padding:8px 10px;border-radius:8px;margin-bottom:10px;border:1px dashed var(--accent);">⚠ 老数据缺少付款人信息，下方结算按"集体均摊"估算。新记账时请选付款人，结算更精确。</div>';
   }
   /* 5. 输出每人实付/应承担/净额表 */
+  if(hasUnequal){
+    settleHtml+='<div style="font-size:0.72rem;color:var(--primary-dark);background:var(--primary-bg);padding:8px 10px;border-radius:8px;margin-bottom:10px;">✓ 已按每笔账的实际参与人分摊（有账目不是全员参与）</div>';
+  }
   settleHtml+='<div class="table-wrap"><table><thead><tr><th>成员</th><th>实付</th><th>应承担</th><th>净额</th></tr></thead><tbody>';
+  var meId=(myMember()||{}).id;
   for(i=0;i<N;i++){
     var m=members[i];
     var n=net[m.id];
     var netCls=n>0?'income':'expense';
     var netLabel=n>0?'应收':(n<0?'应付':'已平衡');
-    settleHtml+='<tr><td>'+escapeHtml(m.name)+'</td><td>'+fmtMoney(paid[m.id])+'</td><td>'+fmtMoney(owed[m.id])+'</td><td class="'+netCls+'"><strong>'+fmtMoney(Math.abs(n))+'</strong> <span style="font-size:0.68rem;color:var(--text-light)">'+netLabel+'</span></td></tr>';
+    var isMe=(meId&&m.id===meId);
+    settleHtml+='<tr'+(isMe?' style="background:var(--primary-bg)"':'')+'><td>'+escapeHtml(m.name)+
+      (isMe?' <span style="font-size:0.62rem;color:var(--primary);font-weight:600">我</span>':'')+
+      '</td><td>'+fmtMoney(paid[m.id])+'</td><td>'+fmtMoney(owed[m.id])+'</td><td class="'+netCls+'"><strong>'+fmtMoney(Math.abs(n))+'</strong> <span style="font-size:0.68rem;color:var(--text-light)">'+netLabel+'</span></td></tr>';
   }
   settleHtml+='</tbody></table></div>';
   /* 6. 贪心算法生成结算清单（谁给谁多少） */
@@ -3328,7 +3530,7 @@ function renderSettlement(data){
 }
 function renderSummary(){
   var p=document.getElementById('panel-summary');
-  var data=state.data;
+  var data=viewData();
   var preSum=0;
   for(var i=0;i<data.prepaid.length;i++){preSum+=Number(data.prepaid[i].amount)||0;}
   var enCollective=0,enPersonal=0,byCat={},byDate={};
