@@ -245,6 +245,29 @@ tr:hover{background:rgba(45,139,139,0.03);}
 .outfit-person{font-size:0.72rem;padding:2px 10px;border-radius:10px;background:linear-gradient(135deg,#3aa8a0,#5ec9be);color:#fff;font-weight:500;}
 .outfit-desc{font-size:0.82rem;color:var(--text);line-height:1.5;}
 .outfit-actions{display:flex;gap:6px;margin-top:8px;}
+/* ========== 每日穿搭并列布局 ========== */
+.day-outfit-card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid var(--primary-light);}
+.day-outfit-card.today{border-left-color:var(--accent);background:linear-gradient(135deg,#fff 0%,#fff6ea 100%);}
+.day-outfit-card.past{opacity:0.6;}
+.day-outfit-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.day-outfit-head .day-num{font-size:0.92rem;font-weight:700;color:var(--primary-dark);}
+.day-outfit-head .day-date{font-size:0.76rem;color:var(--text-light);}
+.day-outfit-head .day-badge{font-size:0.66rem;padding:2px 8px;border-radius:10px;background:var(--primary-bg);color:var(--primary-dark);white-space:nowrap;}
+.day-outfit-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+@media(min-width:640px){.day-outfit-grid{grid-template-columns:1fr 1fr;}}
+.day-outfit-route{background:var(--primary-bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:0.8rem;}
+.day-outfit-route .r-line{margin:3px 0;color:var(--text);line-height:1.45;}
+.day-outfit-route .r-line strong{color:var(--primary-dark);}
+.day-outfit-route .r-temp{display:inline-block;font-size:0.72rem;padding:1px 7px;border-radius:6px;background:var(--card);color:var(--primary-dark);font-weight:600;margin:4px 0 2px;}
+.day-outfit-route .r-tip{font-size:0.74rem;color:var(--text-light);margin-top:4px;line-height:1.45;}
+.day-outfit-list{display:flex;flex-direction:column;gap:6px;}
+.outfit-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:0.78rem;display:flex;align-items:flex-start;gap:6px;}
+.outfit-row .o-person{font-weight:600;color:var(--primary);white-space:nowrap;flex-shrink:0;}
+.outfit-row .o-desc{color:var(--text);flex:1;line-height:1.45;}
+.outfit-row .o-del{border:none;background:transparent;color:var(--text-light);cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;opacity:0.5;}
+.outfit-row .o-del:hover{opacity:1;color:var(--danger);}
+.outfit-row .o-del svg{width:13px;height:13px;}
+.outfit-empty{font-size:0.74rem;color:var(--text-light);font-style:italic;padding:6px 8px;}
 /* ========== 穿搭建议 ========== */
 .weather-brief{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
 .weather-brief-item{display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;color:var(--text);background:rgba(255,255,255,0.75);border-radius:var(--radius-sm);padding:7px 10px;}
@@ -310,6 +333,33 @@ body.space-personal .expense-item .payer-tag{background:#fff3e0;color:#8a5a1a;bo
 .owner-chip{display:inline-flex;align-items:center;font-size:0.78rem;padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;user-select:none;}
 .owner-chip input{display:none;}
 .owner-chip.on{font-weight:600;}
+/* ========== 必买清单板块 ========== */
+.prep-board-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(min-width:640px){.prep-board-grid{grid-template-columns:repeat(3,1fr);}}
+.prep-board{background:var(--primary-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:120px;}
+.prep-board-head{display:flex;align-items:center;gap:6px;border-bottom:1px dashed var(--border);padding-bottom:6px;}
+.prep-board-name{flex:1;font-size:0.86rem;font-weight:600;color:var(--primary-dark);background:transparent;border:1px solid transparent;border-radius:6px;padding:3px 6px;min-width:0;}
+.prep-board-name:focus{outline:none;background:#fff;border-color:var(--primary-light);}
+.prep-board-del{border:none;background:transparent;color:var(--text-light);cursor:pointer;padding:2px;border-radius:6px;display:flex;align-items:center;}
+.prep-board-del:hover{color:var(--danger);background:rgba(231,93,93,0.08);}
+.prep-board-del svg{width:14px;height:14px;}
+.prep-board-items{display:flex;flex-direction:column;gap:6px;flex:1;}
+.prep-item{background:var(--card);border-radius:var(--radius-sm);padding:6px 8px;display:flex;flex-direction:column;gap:5px;border:1px solid transparent;}
+.prep-item.all-ready{border-color:var(--primary-light);background:linear-gradient(135deg,#fff 0%,#eafaf1 100%);}
+.prep-item-top{display:flex;align-items:center;gap:6px;}
+.prep-item-name{flex:1;font-size:0.82rem;color:var(--text);background:transparent;border:1px solid transparent;border-radius:5px;padding:2px 4px;min-width:0;}
+.prep-item-name:focus{outline:none;background:#fff;border-color:var(--primary-light);}
+.prep-item-del{border:none;background:transparent;color:var(--text-light);cursor:pointer;padding:0 2px;display:flex;align-items:center;opacity:0.5;}
+.prep-item-del:hover{opacity:1;color:var(--danger);}
+.prep-item-del svg{width:13px;height:13px;}
+.prep-ready-row{display:flex;flex-wrap:wrap;gap:4px;}
+.prep-ready{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);color:var(--text-light);font-size:0.72rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;transition:transform 0.1s;}
+.prep-ready:active{transform:scale(0.88);}
+.prep-ready.on{color:#fff;border-color:transparent;}
+.prep-add-row{margin-top:4px;}
+.prep-add-input{width:100%;font-size:0.78rem;color:var(--text);background:rgba(255,255,255,0.5);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:6px 8px;}
+.prep-add-input:focus{outline:none;border-color:var(--primary);background:#fff;border-style:solid;}
+.prep-empty-board{font-size:0.74rem;color:var(--text-light);text-align:center;padding:8px 0;font-style:italic;}
 .plan-range{display:inline-block;font-size:0.66rem;padding:1px 6px;border-radius:8px;margin-left:4px;background:var(--primary-bg);color:var(--primary-dark);white-space:nowrap;}
 /* 日历里跨天计划的连续条 */
 .cal-day .day-bar{display:block;height:3px;border-radius:2px;margin-top:1px;}
@@ -901,7 +951,7 @@ var EXPENSE_CATEGORIES=['餐饮','住宿','加油','过路费','停车费','门�
 var state={
   spaceMode:'team',  /* 'team' | 'personal' */
   workspaceId:null,
-  data:{prepItems:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]},
+  data:{prepItems:[],prepCategories:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]},
   /* 两套独立数据：团队空间（云端同步）与个人空间（仅本地） */
   teamData:null,
   personalData:null,
@@ -1087,11 +1137,11 @@ var SB_ANON='sb_publishable_tL1-YiaZ0AJcVCpqCt5d8A_p91RFmYJ';
 var SB_SESSION_KEY='qinggan_sb_session';
 var SB_WS_KEY='qinggan_sb_current_ws';
 /* 数据类型 <-> records.kind 映射 */
-var KIND_MAP={prepItems:'prepItem',prepaid:'prepaid',expenses:'expense',
+var KIND_MAP={prepItems:'prepItem',prepCategories:'prepCategory',prepaid:'prepaid',expenses:'expense',
               outfits:'outfit',todos:'todo',prepTodos:'prepTodo',members:'member'};
 var KIND_REVERSE={};
 (function(){for(var k in KIND_MAP){if(KIND_MAP.hasOwnProperty(k)){KIND_REVERSE[KIND_MAP[k]]=k;}}})();
-var DATA_TYPES=['prepItems','prepaid','expenses','outfits','todos','members','prepTodos'];
+var DATA_TYPES=['prepItems','prepCategories','prepaid','expenses','outfits','todos','members','prepTodos'];
 
 var auth={
   session:null,        /* {access_token, refresh_token, expires_at, user:{id,email}} */
@@ -1349,7 +1399,7 @@ function dataToRecords(data){
 }
 /* records 数组转 state.data */
 function recordsToData(rows,isPersonal){
-  var d={prepItems:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]};
+  var d={prepItems:[],prepCategories:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]};
   var hasAny=false;
   for(var i=0;i<(rows||[]).length;i++){
     var r=rows[i];
@@ -1880,7 +1930,7 @@ function initAuthModule(){
 
 /* 初始化默认数据结构（复用给团队空间和个人空间） */
 function buildDefaultData(isPersonal){
-  var d={prepItems:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]};
+  var d={prepItems:[],prepCategories:[],prepaid:[],expenses:[],outfits:[],todos:[],members:[],prepTodos:[]};
   /* 个人空间：预付大项为空（用户自填），成员只默认 1 人（自己） */
   if(isPersonal){
     d.members=[{id:'m0',name:'我',_ts:Date.now()}];
@@ -1933,6 +1983,29 @@ function normalizeData(d,isPersonal,isExisting){
   if(!d){return buildDefaultData(isPersonal);}
   if(!d.expenses){d.expenses=[];}
   if(!d.prepItems){d.prepItems=[];}
+  if(!d.prepCategories){d.prepCategories=[];}
+  /* 老必买清单只有 category 字符串字段，这里升级成分类板块：
+     每个旧 category 找出（或新建）一个 prepCategories 条目，
+     把物品的 cat 指向分类 id。price/channel/owner/bought/overdue 在新模型里
+     不再使用，但旧字段原样留着，老设备读旧数据不会崩。readyBy 用空对象初始化。 */
+  if(d.prepItems&&d.prepItems.length){
+    var _pc=d.prepCategories,_pcByName={},_pci;
+    for(_pci=0;_pci<_pc.length;_pci++){
+      if(_pc[_pci]&&!_pc[_pci]._deleted&&_pc[_pci].name){_pcByName[_pc[_pci].name]=_pc[_pci].id;}
+    }
+    for(var _pii=0;_pii<d.prepItems.length;_pii++){
+      var _pi=d.prepItems[_pii];
+      if(!_pi||_pi.cat){continue;}
+      var _cname=_pi.category||'其他';
+      if(!_pcByName[_cname]){
+        var _ncid=genId();
+        _pc.push({id:_ncid,name:_cname,_ts:Date.now()});
+        _pcByName[_cname]=_ncid;
+      }
+      _pi.cat=_pcByName[_cname];
+      if(!_pi.readyBy){_pi.readyBy={};}
+    }
+  }
   if(!d.outfits){d.outfits=[];}
   if(!d.todos){d.todos=[];}
   /* 计划字段迁移：老待办只有 date + 单个 owner，这里补出区间和多人字段。
@@ -2084,9 +2157,9 @@ function renderBudgetAlert(){
 }
 
 /* ---------- 结算快照（已付清）----------
-   存在 _meta.settled = {ts:结算时间, by:操作人昵称, paid:{成员id:当时实付}, owed:{成员id:当时应承担}}
-   结算时只统计 _ts > settled.ts 的账目，已结清的不再重复算。
-   快照随云端同步，所有人看到的结算状态一致。 */
+   _meta.settled = {ts, by, at, paid, owed, coveredIds, count, total}
+   coveredIds 记下结算时哪些账被算过，之后改/删这些旧账都不会污染基线。
+   老快照没有 coveredIds，回退到原来的 paid/owed 总额减法（兼容老数据）。 */
 function getSettled(){
   var m=(state.data&&state.data._meta)||{};
   return m.settled||null;
@@ -2108,12 +2181,18 @@ function markSettled(){
     '标记后这些账不再出现在结算清单里，之后新记的账会重新开始算。\n'+
     '（随时可以撤销）',
     function(){
+      /* 把当时所有存活的账 id 都记下来，以后改旧账也不会污染基线 */
+      var _cov={},_ci;
+      for(_ci=0;_ci<aliveList(state.data.expenses).length;_ci++){
+        _cov[aliveList(state.data.expenses)[_ci].id]=true;
+      }
       setSettled({
         ts:Date.now(),
         by:currentNickname()||'某人',
         at:fmtDate(todayStr()),
         paid:r.paid,
         owed:r.owed,
+        coveredIds:_cov,
         count:r.transfers.length,
         total:r.transfers.reduce(function(s,t){return s+t.amt;},0)
       });
@@ -2135,7 +2214,7 @@ function unmarkSettled(){
    写操作请继续用 state.data（按 id 查找修改），只有"读来渲染"才用这个。 */
 function viewData(){
   var s=state.data||{};
-  var v={},types=['prepItems','prepaid','expenses','outfits','todos','members','prepTodos'],i;
+  var v={},types=['prepItems','prepCategories','prepaid','expenses','outfits','todos','members','prepTodos'],i;
   for(var k in s){if(s.hasOwnProperty(k)&&types.indexOf(k)===-1){v[k]=s[k];}}
   for(i=0;i<types.length;i++){v[types[i]]=aliveList(s[types[i]]);}
   return v;
@@ -2244,7 +2323,7 @@ function filterPreset(arr,prefix){
 function mergeData(local,remote){
   if(!remote){return local;}
   if(!local){return remote;}
-  var types=['prepItems','prepaid','expenses','outfits','todos','members','prepTodos'];
+  var types=['prepItems','prepCategories','prepaid','expenses','outfits','todos','members','prepTodos'];
   var merged={};
   for(var t in local){
     if(local.hasOwnProperty(t)&&types.indexOf(t)===-1&&t!=='_wsId'){merged[t]=local[t];}
@@ -2515,8 +2594,8 @@ function renderPrep(){
   var data=viewData();
   var prepItems=data.prepItems||[];
   var todos=data.todos||[];
+  var members=aliveMembers();
   var today=todayStr();
-  var toStart=daysBetween(today,TRIP_START);
   /* 计划分类：逾期 / 今天要做 / 未来
      逾期看结束日 —— 9.25–9.30 的阶段计划，9.27 那天还在进行中，不该标红。
      今天要做包含「今天正好落在区间里」的阶段计划。 */
@@ -2528,19 +2607,10 @@ function renderPrep(){
     else if(planCoversDate(_p,today)){todayTodos.push(_p);}
     else{upcomingTodos.push(_p);}
   }
-  /* 未购物品 */
-  var pendingItems=[];
-  for(var i=0;i<prepItems.length;i++){
-    if(!prepItems[i].bought){pendingItems.push(prepItems[i]);}
-  }
-  var urgentItems=[];
-  for(var ui=0;ui<pendingItems.length;ui++){
-    if(pendingItems[ui].overdue){urgentItems.push(pendingItems[ui]);}
-  }
-  /* 今天要处理 */
+  /* 今天要处理：只列计划，物品不再单列（板块里就能直接看谁备了谁没备） */
   var todayHtml='<div class="today-section"><div class="today-title">'+svgIcon('today')+'今天要处理</div>';
-  if(overdueTodos.length===0&&todayTodos.length===0&&pendingItems.length===0){
-    todayHtml+='<div class="today-empty">暂无计划与待购物品，点下方「添加计划 / 添加物品」开始规划</div>';
+  if(overdueTodos.length===0&&todayTodos.length===0){
+    todayHtml+='<div class="today-empty">今天没有要处理的计划，下方可以添加</div>';
   }else{
     for(var j=0;j<overdueTodos.length;j++){
       todayHtml+='<div class="today-item overdue"><span class="label"><strong>【逾期】</strong>'+escapeHtml(overdueTodos[j].text)+
@@ -2553,17 +2623,6 @@ function renderPrep(){
       todayHtml+='<div class="today-item"><span class="label"><strong>'+_lbl+'</strong>'+escapeHtml(todayTodos[t2].text)+
         '<span class="plan-range">'+planDateLabel(todayTodos[t2])+'</span>'+planByBadge(todayTodos[t2])+
         '</span><button class="btn btn-sm btn-primary act-btn" data-action="doneTodo" data-id="'+todayTodos[t2].id+'">完成</button></div>';
-    }
-    for(var u2=0;u2<urgentItems.length;u2++){
-      todayHtml+='<div class="today-item overdue"><span class="label"><strong>【急购】</strong>'+escapeHtml(urgentItems[u2].category)+' · '+escapeHtml(urgentItems[u2].name)+'</span><button class="btn btn-sm btn-primary act-btn" data-action="bought" data-id="'+urgentItems[u2].id+'">已购</button></div>';
-    }
-    /* 未购物品最多列 3 条，其余汇总提示 */
-    var showItems=pendingItems.slice(0,3);
-    for(var s=0;s<showItems.length;s++){
-      todayHtml+='<div class="today-item"><span class="label"><strong>【待购】</strong>'+escapeHtml(showItems[s].category)+' · '+escapeHtml(showItems[s].name)+'</span><button class="btn btn-sm btn-primary act-btn" data-action="bought" data-id="'+showItems[s].id+'">已购</button></div>';
-    }
-    if(pendingItems.length>3){
-      todayHtml+='<div class="today-empty" style="padding:4px">还有 '+(pendingItems.length-3)+' 件物品待购，见下方清单</div>';
     }
   }
   todayHtml+='</div>';
@@ -2602,59 +2661,83 @@ function renderPrep(){
     }
   }
   todoCard+='</div>';
-  /* 预算总览 */
-  var boughtTotal=0,unboughtTotal=0,boughtCount=0;
-  for(var k=0;k<prepItems.length;k++){
-    if(prepItems[k].bought){boughtTotal+=Number(prepItems[k].price)||0;boughtCount++;}
-    else{unboughtTotal+=Number(prepItems[k].price)||0;}
+  /* 必买清单：按分类板块展示。
+     每个板块一排排物品，物品后面是一排成员头像按钮，
+     点亮代表「我备好了」，所有人点亮 = 全员备齐。 */
+  var cats=prepCats();
+  var byCat={};
+  for(var bc=0;bc<cats.length;bc++){byCat[cats[bc].id]=[];}
+  for(var pi=0;pi<prepItems.length;pi++){
+    var _it=prepItems[pi];
+    var _cid=_it.cat||'';
+    /* 老数据没 cat（还没迁移）兜底到第一个分类，避免物品凭空消失 */
+    if(!_cid&&cats.length){_cid=cats[0].id;}
+    if(!byCat[_cid]){byCat[_cid]=[];}
+    byCat[_cid].push(_it);
   }
-  var allTotal=boughtTotal+unboughtTotal;
-  var prog=prepItems.length?Math.round(boughtCount/prepItems.length*100):0;
-  var budgetHtml='<div class="card"><div class="card-title">'+svgIcon('prep')+'准备预算总览</div>'+
-    '<div class="stat-grid">'+
-      '<div class="stat-card"><div class="label">总预算</div><div class="value">'+fmtMoney(allTotal)+'</div><div class="sub">'+prepItems.length+'件物品</div></div>'+
-      '<div class="stat-card"><div class="label">已花费</div><div class="value expense">'+fmtMoney(boughtTotal)+'</div><div class="sub">'+boughtCount+'件已购</div></div>'+
-      '<div class="stat-card"><div class="label">待花费</div><div class="value">'+fmtMoney(unboughtTotal)+'</div><div class="sub">'+(prepItems.length-boughtCount)+'件未购</div></div>'+
-      '<div class="stat-card"><div class="label">完成进度</div><div class="value">'+prog+'%</div><div class="sub">'+boughtCount+'/'+prepItems.length+'</div></div>'+
-    '</div>'+
-    '<div class="progress-wrap"><div class="progress-label"><span>备齐进度</span><span>'+prog+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+prog+'%"></div></div></div>'+
-    '</div>';
-  /* 工具栏 */
-  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addTodoBtn">'+svgIcon('plus')+'添加计划</button><button class="btn btn-primary btn-sm" id="addPrepBtn">'+svgIcon('plus')+'添加物品</button><button class="btn btn-outline btn-sm" id="clearPrepSampleBtn">清空数据</button></div>';
-  /* 清单表格 */
-  var categories={};
-  for(var c=0;c<prepItems.length;c++){
-    var cat=prepItems[c].category||'其他';
-    if(!categories[cat]){categories[cat]=[];}
-    categories[cat].push(prepItems[c]);
+  /* 备齐进度 */
+  var fullyReady=0;
+  for(var fr=0;fr<prepItems.length;fr++){
+    if(prepAllReady(prepItems[fr])){fullyReady++;}
   }
-  var listHtml='<div class="card"><div class="card-title">必买清单（按分类）</div>';
+  var boardHtml='<div class="card"><div class="card-title">'+svgIcon('prep')+'必买清单 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（'+fullyReady+'/'+prepItems.length+' 全员备齐）</span></div>';
   if(prepItems.length===0){
-    listHtml+='<div class="empty">'+svgIcon('prep')+'<div>清单是空的，点上方「添加物品」开始添加</div></div>';
+    boardHtml+='<div class="empty">'+svgIcon('prep')+'<div>清单是空的，点下方「添加板块」或在板块里输入物品名开始添加</div></div>';
   }
-  for(var catKey in categories){
-    if(!categories.hasOwnProperty(catKey)){continue;}
-    var items=categories[catKey];
-    listHtml+='<div style="margin-bottom:12px;"><div style="font-size:0.82rem;font-weight:600;color:var(--primary-dark);margin-bottom:6px;padding-left:4px;border-left:3px solid var(--primary-light);">'+escapeHtml(catKey)+'（'+items.length+'件）</div><div class="table-wrap"><table><thead><tr><th style="width:30px">购</th><th>物品</th><th>价格</th><th>渠道</th><th>负责人</th><th style="width:80px"></th></tr></thead><tbody>';
-    for(var m=0;m<items.length;m++){
-      var it2=items[m];
-      listHtml+='<tr><td><input type="checkbox" data-id="'+it2.id+'" class="prep-check" '+(it2.bought?'checked':'')+'></td><td style="text-decoration:'+(it2.bought?'line-through;color:var(--text-light)':'none')+'">'+escapeHtml(it2.name)+(it2.overdue?' <span style="color:var(--danger);font-size:0.7rem">[急]</span>':'')+'</td><td class="expense">'+fmtMoney(it2.price)+'</td><td>'+escapeHtml(it2.channel)+'</td><td>'+(it2.owner?ownerBadge(it2.owner):'<span style="color:var(--text-light);font-size:0.7rem">—</span>')+'</td><td><div style="display:flex;gap:2px"><button class="edit-btn" data-action="editPrep" data-id="'+it2.id+'" title="修改">'+svgIcon('edit')+'</button><button class="sync-btn" data-action="delPrep" data-id="'+it2.id+'">'+svgIcon('trash')+'</button></div></td></tr>';
+  boardHtml+='<div class="prep-board-grid">';
+  for(var bi=0;bi<cats.length;bi++){
+    var cat=cats[bi];
+    var items=byCat[cat.id]||[];
+    boardHtml+='<div class="prep-board" data-cat="'+cat.id+'">'+
+      '<div class="prep-board-head">'+
+        '<input class="prep-board-name" value="'+escapeHtml(cat.name)+'" data-cat="'+cat.id+'">'+
+        '<button class="prep-board-del" data-action="delBoard" data-id="'+cat.id+'" title="删除板块">'+svgIcon('trash')+'</button>'+
+      '</div>'+
+      '<div class="prep-board-items">';
+    if(items.length===0){
+      boardHtml+='<div class="prep-empty-board">还没有物品，下面输入添加</div>';
+    }else{
+      for(var ii=0;ii<items.length;ii++){
+        var item=items[ii];
+        var allR=prepAllReady(item);
+        boardHtml+='<div class="prep-item'+(allR?' all-ready':'')+'" data-id="'+item.id+'">'+
+          '<div class="prep-item-top">'+
+            '<input class="prep-item-name" value="'+escapeHtml(item.name)+'" data-id="'+item.id+'">'+
+            '<button class="prep-item-del" data-action="delPrepItem" data-id="'+item.id+'" title="删除物品">'+svgIcon('trash')+'</button>'+
+          '</div>'+
+          '<div class="prep-ready-row">';
+        for(var ri=0;ri<members.length;ri++){
+          var mb=members[ri];
+          var on=!!(item.readyBy&&item.readyBy[mb.id]);
+          var col=memberColor(ri);
+          boardHtml+='<button class="prep-ready'+(on?' on':'')+'" style="'+(on?('background:'+col+';border-color:'+col):'')+'" data-action="toggleReady" data-id="'+item.id+'" data-mid="'+mb.id+'" title="'+escapeHtml(mb.name)+'">'+escapeHtml((mb.name||'?').charAt(0))+'</button>';
+        }
+        boardHtml+='</div></div>';
+      }
     }
-    listHtml+='</tbody></table></div></div>';
+    boardHtml+='</div>';
+    /* 板块底部添加物品输入框，回车直接添加 */
+    boardHtml+='<div class="prep-add-row"><input class="prep-add-input" placeholder="+ 添加物品，回车确认" data-cat="'+cat.id+'"></div>';
+    boardHtml+='</div>';
   }
-  listHtml+='</div>';
+  boardHtml+='</div>';
+  /* 加板块按钮 */
+  boardHtml+='<div style="margin-top:10px"><button class="btn btn-outline btn-sm" id="addBoardBtn">'+svgIcon('plus')+'添加板块</button></div>';
+  boardHtml+='</div>';
+  /* 工具栏 */
+  var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addTodoBtn">'+svgIcon('plus')+'添加计划</button><button class="btn btn-outline btn-sm" id="clearPrepSampleBtn">清空数据</button></div>';
   /* 成员分工 */
   var memberHtml=renderMemberDivision(prepItems,todos);
-  p.innerHTML=todayHtml+calHtml+todoCard+memberHtml+budgetHtml+toolbar+listHtml;
+  p.innerHTML=todayHtml+calHtml+todoCard+memberHtml+boardHtml+toolbar;
   /* 事件 */
   var addTodoBtn=document.getElementById('addTodoBtn');
   if(addTodoBtn){addTodoBtn.onclick=function(){showTodoForm();};}
-  var addBtn=document.getElementById('addPrepBtn');
-  if(addBtn){addBtn.onclick=function(){showPrepForm();};}
+  var addBoardBtn=document.getElementById('addBoardBtn');
+  if(addBoardBtn){addBoardBtn.onclick=function(){showAddBoardForm();};}
   var clearBtn=document.getElementById('clearPrepSampleBtn');
   if(clearBtn){clearBtn.onclick=function(){
     showConfirm('清空准备数据','将删除全部计划与物品记录，此操作不可撤销。确定继续吗？',function(){
-      state.data.prepItems=[];state.data.todos=[];saveData();renderPrep();showToast('已清空');
+      state.data.prepItems=[];state.data.prepCategories=[];state.data.todos=[];saveData();renderPrep();showToast('已清空');
     });
   };}
   /* 待办完成/删除 */
@@ -2688,34 +2771,6 @@ function renderPrep(){
       saveData();renderPrep();showToast('已删除');
     };
   }
-  var checks=p.querySelectorAll('.prep-check');
-  for(var ci=0;ci<checks.length;ci++){
-    checks[ci].onchange=function(){
-      var id=this.getAttribute('data-id');
-      for(var ai=0;ai<state.data.prepItems.length;ai++){
-        if(state.data.prepItems[ai].id===id){
-          state.data.prepItems[ai].bought=this.checked;
-          state.data.prepItems[ai]._ts=Date.now();
-          break;
-        }
-      }
-      saveData();renderPrep();
-    };
-  }
-  var delBtns=p.querySelectorAll('[data-action="delPrep"]');
-  for(var di=0;di<delBtns.length;di++){
-    delBtns[di].onclick=function(){
-      var id=this.getAttribute('data-id');
-      showConfirm('删除物品','确定删除这条物品记录吗？',function(){
-        for(var bi=0;bi<state.data.prepItems.length;bi++){
-          if(state.data.prepItems[bi].id===id){
-            state.data.prepItems[bi]._deleted=true;state.data.prepItems[bi]._ts=Date.now();break;
-          }
-        }
-        saveData();renderPrep();showToast('已删除');
-      });
-    };
-  }
   /* 编辑计划 */
   var editTodoBtns=p.querySelectorAll('[data-action="editTodo"]');
   for(var eti=0;eti<editTodoBtns.length;eti++){
@@ -2724,31 +2779,6 @@ function renderPrep(){
       for(var i=0;i<state.data.todos.length;i++){
         if(state.data.todos[i].id===id){showTodoForm(state.data.todos[i]);break;}
       }
-    };
-  }
-  /* 编辑物品 */
-  var editBtns=p.querySelectorAll('[data-action="editPrep"]');
-  for(var edi=0;edi<editBtns.length;edi++){
-    editBtns[edi].onclick=function(){
-      var id=this.getAttribute('data-id');
-      for(var ei=0;ei<state.data.prepItems.length;ei++){
-        if(state.data.prepItems[ei].id===id){showPrepForm(state.data.prepItems[ei]);break;}
-      }
-    };
-  }
-  var boughtBtns=p.querySelectorAll('[data-action="bought"]');
-  for(var bi2=0;bi2<boughtBtns.length;bi2++){
-    boughtBtns[bi2].onclick=function(){
-      var id=this.getAttribute('data-id');
-      for(var ci2=0;ci2<state.data.prepItems.length;ci2++){
-        if(state.data.prepItems[ci2].id===id){
-          state.data.prepItems[ci2].bought=true;
-          state.data.prepItems[ci2].overdue=false;
-          state.data.prepItems[ci2]._ts=Date.now();
-          break;
-        }
-      }
-      saveData();renderPrep();showToast('已标记为已购');
     };
   }
   /* 日历事件：上月/下月/今天 */
@@ -2782,22 +2812,15 @@ function renderPrep(){
   for(var mi2=0;mi2<memberInputs.length;mi2++){
     memberInputs[mi2].onchange=function(){
       var id=this.getAttribute('data-id');
-      var name=this.value.trim();
-      for(var mj=0;mj<state.data.members.length;mj++){
-        if(state.data.members[mj].id===id){state.data.members[mj].name=name||state.data.members[mj].name;state.data.members[mj]._ts=Date.now();break;}
+      var val=this.value.trim();
+      if(!val){showToast('名字不能为空');renderPrep();return;}
+      for(var mi3=0;mi3<state.data.members.length;mi3++){
+        if(state.data.members[mi3].id===id){state.data.members[mi3].name=val;state.data.members[mi3]._ts=Date.now();break;}
       }
-      if(!name){this.value=memberNameById(id);}
-      saveData();renderPrep();
+      saveData();renderPrep();renderCurrentPanel();
     };
   }
-  /* 添加/删除成员 */
-  var addMemberBtn=p.querySelector('[data-action="addMember"]');
-  if(addMemberBtn){addMemberBtn.onclick=function(){
-    var alive=aliveMembers();
-    if(alive.length>=12){showToast('最多 12 位成员');return;}
-    state.data.members.push({id:genId(),name:'成员'+(alive.length+1),_ts:Date.now()});
-    saveData();renderPrep();renderCurrentPanel();
-  };}
+  /* 删除成员 */
   var delMemberBtns=p.querySelectorAll('[data-action="delMember"]');
   for(var dm=0;dm<delMemberBtns.length;dm++){
     delMemberBtns[dm].onclick=function(){
@@ -2834,8 +2857,147 @@ function renderPrep(){
       showMemberDetail(id);
     };
   }
+  /* === 必买清单板块事件 === */
+  /* 板块重命名（失焦保存） */
+  var boardNames=p.querySelectorAll('.prep-board-name');
+  for(var bn=0;bn<boardNames.length;bn++){
+    boardNames[bn].onchange=function(){
+      var cid=this.getAttribute('data-cat');
+      var val=this.value.trim();
+      if(!val){showToast('板块名不能为空');renderPrep();return;}
+      for(var bi2=0;bi2<state.data.prepCategories.length;bi2++){
+        if(state.data.prepCategories[bi2].id===cid){
+          state.data.prepCategories[bi2].name=val;
+          state.data.prepCategories[bi2]._ts=Date.now();
+          break;
+        }
+      }
+      saveData();renderPrep();
+    };
+  }
+  /* 删除板块（连带删除其中的物品） */
+  var delBoardBtns=p.querySelectorAll('[data-action="delBoard"]');
+  for(var db=0;db<delBoardBtns.length;db++){
+    delBoardBtns[db].onclick=function(){
+      var cid=this.getAttribute('data-id');
+      var cname=prepCatName(cid);
+      var cnt=0,ci;
+      for(ci=0;ci<state.data.prepItems.length;ci++){
+        if(!state.data.prepItems[ci]._deleted&&state.data.prepItems[ci].cat===cid){cnt++;}
+      }
+      var msg='删除板块「'+cname+'」';
+      if(cnt>0){msg+='会同时删除其中的 '+cnt+' 件物品';}
+      msg+='，确定吗？';
+      showConfirm('删除板块',msg,function(){
+        for(var bi3=0;bi3<state.data.prepCategories.length;bi3++){
+          if(state.data.prepCategories[bi3].id===cid){
+            state.data.prepCategories[bi3]._deleted=true;
+            state.data.prepCategories[bi3]._ts=Date.now();
+            break;
+          }
+        }
+        for(var pi2=0;pi2<state.data.prepItems.length;pi2++){
+          if(!state.data.prepItems[pi2]._deleted&&state.data.prepItems[pi2].cat===cid){
+            state.data.prepItems[pi2]._deleted=true;
+            state.data.prepItems[pi2]._ts=Date.now();
+          }
+        }
+        saveData();renderPrep();showToast('已删除板块');
+      });
+    };
+  }
+  /* 物品名编辑（失焦保存） */
+  var itemNameInputs=p.querySelectorAll('.prep-item-name');
+  for(var inm=0;inm<itemNameInputs.length;inm++){
+    itemNameInputs[inm].onchange=function(){
+      var id=this.getAttribute('data-id');
+      var val=this.value.trim();
+      if(!val){showToast('物品名不能为空');renderPrep();return;}
+      for(var pi3=0;pi3<state.data.prepItems.length;pi3++){
+        if(state.data.prepItems[pi3].id===id){
+          state.data.prepItems[pi3].name=val;
+          state.data.prepItems[pi3]._ts=Date.now();
+          break;
+        }
+      }
+      saveData();renderPrep();
+    };
+  }
+  /* 删除物品 */
+  var delItemBtns=p.querySelectorAll('[data-action="delPrepItem"]');
+  for(var dpi=0;dpi<delItemBtns.length;dpi++){
+    delItemBtns[dpi].onclick=function(){
+      var id=this.getAttribute('data-id');
+      for(var pi4=0;pi4<state.data.prepItems.length;pi4++){
+        if(state.data.prepItems[pi4].id===id){
+          state.data.prepItems[pi4]._deleted=true;
+          state.data.prepItems[pi4]._ts=Date.now();
+          break;
+        }
+      }
+      saveData();renderPrep();showToast('已删除');
+    };
+  }
+  /* 成员确认按钮：点亮/取消「我备好了」 */
+  var readyBtns=p.querySelectorAll('[data-action="toggleReady"]');
+  for(var rb=0;rb<readyBtns.length;rb++){
+    readyBtns[rb].onclick=function(){
+      var id=this.getAttribute('data-id');
+      var mid=this.getAttribute('data-mid');
+      for(var pi5=0;pi5<state.data.prepItems.length;pi5++){
+        if(state.data.prepItems[pi5].id===id){
+          if(!state.data.prepItems[pi5].readyBy){state.data.prepItems[pi5].readyBy={};}
+          if(state.data.prepItems[pi5].readyBy[mid]){
+            delete state.data.prepItems[pi5].readyBy[mid];
+          }else{
+            state.data.prepItems[pi5].readyBy[mid]=true;
+          }
+          state.data.prepItems[pi5]._ts=Date.now();
+          break;
+        }
+      }
+      saveData();renderPrep();
+    };
+  }
+  /* 板块底部添加物品（回车确认） */
+  var addInputs=p.querySelectorAll('.prep-add-input');
+  for(var ai=0;ai<addInputs.length;ai++){
+    addInputs[ai].onkeydown=function(ev){
+      if(ev.keyCode!==13){return;}
+      var cid=this.getAttribute('data-cat');
+      var val=this.value.trim();
+      if(!val){return;}
+      state.data.prepItems.push({
+        id:genId(),cat:cid,name:val,readyBy:{},_ts:Date.now()
+      });
+      saveData();renderPrep();
+    };
+  }
 }
-/* ---- 成员分工辅助函数 ---- */
+/* 添加板块的表单 */
+function showAddBoardForm(){
+  var sheet=document.getElementById('formModalSheet');
+  sheet.innerHTML='<div class="form-modal-title">添加板块<button id="closeForm">✕</button></div>'+
+    '<div class="form-row"><div style="flex:1"><label>板块名称</label><input type="text" id="fBoardName" placeholder="如：户外装备"></div></div>'+
+    '<button class="btn btn-primary btn-block" style="margin-top:12px" id="saveBoardBtn">保存</button>';
+  document.getElementById('formModal').classList.add('show');
+  document.getElementById('closeForm').onclick=function(){document.getElementById('formModal').classList.remove('show');};
+  var inp=document.getElementById('fBoardName');
+  if(inp){inp.focus();}
+  document.getElementById('saveBoardBtn').onclick=function(){
+    var name=document.getElementById('fBoardName').value.trim();
+    if(!name){showToast('请填写板块名称');return;}
+    /* 同名板块已存在就不重复加 */
+    var existing=aliveList(state.data.prepCategories);
+    for(var i=0;i<existing.length;i++){
+      if(existing[i].name===name){showToast('已有这个板块了');return;}
+    }
+    state.data.prepCategories.push({id:genId(),name:name,_ts:Date.now()});
+    saveData();
+    document.getElementById('formModal').classList.remove('show');
+    renderPrep();showToast('已添加板块');
+  };
+}
 function memberNameById(id){
   if(!id){return '未分配';}
   var all=(state.data&&state.data.members)||[];
@@ -2925,6 +3087,56 @@ function planByBadge(t){
 }
 /* 计划负责人多选：一排可点的小胶囊，点一下切换选中
    （用 checkbox 而不是 multiple select —— 手机上 multiple select 极难点） */
+/* ---------- 必买清单分类板块 ---------- */
+var DEFAULT_PREP_CATS=['服饰装备','个护美妆','药品保健','证件','食品','其他'];
+/* 取存活的分类列表；全新空间自动注入默认分类，保证页面打开就有板块可看 */
+function prepCats(){
+  var list=aliveList(state.data&&state.data.prepCategories);
+  if(!list.length){
+    for(var i=0;i<DEFAULT_PREP_CATS.length;i++){
+      var c={id:genId(),name:DEFAULT_PREP_CATS[i],_ts:Date.now()};
+      state.data.prepCategories.push(c);
+      list.push(c);
+    }
+    saveData();
+  }
+  return list;
+}
+/* 按分类 id 查名字 */
+function prepCatName(catId){
+  var list=aliveList(state.data&&state.data.prepCategories);
+  for(var i=0;i<list.length;i++){
+    if(list[i].id===catId){return list[i].name;}
+  }
+  return '其他';
+}
+/* 按名字找分类 id，找不到就新建一个并返回 */
+function prepCatId(name){
+  var list=prepCats();
+  for(var i=0;i<list.length;i++){
+    if(list[i].name===name){return list[i].id;}
+  }
+  var nc={id:genId(),name:name,_ts:Date.now()};
+  state.data.prepCategories.push(nc);
+  return nc.id;
+}
+/* 一件物品有几个人已确认备齐 */
+function prepReadyCount(item){
+  if(!item||!item.readyBy){return 0;}
+  var n=0,k;
+  for(k in item.readyBy){if(item.readyBy.hasOwnProperty(k)&&item.readyBy[k]){n++;}}
+  return n;
+}
+/* 物品是否全员备齐 */
+function prepAllReady(item){
+  var members=aliveMembers();
+  if(!members.length){return false;}
+  if(!item.readyBy){return false;}
+  for(var i=0;i<members.length;i++){
+    if(!item.readyBy[members[i].id]){return false;}
+  }
+  return true;
+}
 function ownerCheckboxes(selIds){
   selIds=selIds||[];
   var mlist=aliveMembers(),html='',i;
@@ -2964,11 +3176,12 @@ function showMemberDetail(memberId){
   if(idx<0){showToast('成员不存在');return;}
   var mem=mmm[idx];
   var col=memberColor(idx);
-  /* 收集该成员负责的物品 */
-  var myItems=[];
-  var _pi=aliveList(state.data.prepItems);
-  for(var i=0;i<_pi.length;i++){
-    if(_pi[i].owner===memberId){myItems.push(_pi[i]);}
+  /* 新模型：物品没有「负责人」概念，每件物品由每个成员各自确认。
+     这里列所有物品，给当前成员勾选「我备好了」。 */
+  var allItems=aliveList(state.data.prepItems);
+  var myReady=0,ci;
+  for(ci=0;ci<allItems.length;ci++){
+    if(allItems[ci].readyBy&&allItems[ci].readyBy[memberId]){myReady++;}
   }
   /* 收集该成员负责的待办 */
   var myTodos=[];
@@ -2977,12 +3190,12 @@ function showMemberDetail(memberId){
     /* 用 planHasOwner 而不是 ===：多人计划要在每个负责人名下都算一份 */
     if(planHasOwner(_td[t],memberId)){myTodos.push(_td[t]);}
   }
-  var totalItems=myItems.length,totalTodos=myTodos.length;
-  var doneItems=0,doneTodos=0;
-  for(var di=0;di<myItems.length;di++){if(myItems[di].bought)doneItems++;}
+  var totalItems=allItems.length,totalTodos=myTodos.length;
+  var doneTodos=0;
   for(var dt=0;dt<myTodos.length;dt++){if(myTodos[dt].done)doneTodos++;}
+  /* 进度 = 已备物品 + 已完成计划，按总件数算 */
+  var doneAll=myReady+doneTodos;
   var totalAll=totalItems+totalTodos;
-  var doneAll=doneItems+doneTodos;
   var pct=totalAll?Math.round(doneAll/totalAll*100):0;
   /* 进度环：内联SVG */
   var ringR=34,circ=2*Math.PI*ringR,dash=Math.round(pct/100*circ);
@@ -2993,17 +3206,18 @@ function showMemberDetail(memberId){
     '<text x="42" y="56" text-anchor="middle" font-size="8" fill="#7f8c8d">完成度</text></svg>';
   /* 进度详情 */
   var detailStats='<div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">'+
-    '<div style="flex:1;min-width:70px;background:var(--primary-bg);border-radius:10px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--primary-dark)">'+totalItems+'</div><div style="font-size:0.7rem;color:var(--text-light)">负责物品</div><div style="font-size:0.7rem;color:var(--primary)">已购 '+doneItems+'</div></div>'+
+    '<div style="flex:1;min-width:70px;background:var(--primary-bg);border-radius:10px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--primary-dark)">'+myReady+'/'+totalItems+'</div><div style="font-size:0.7rem;color:var(--text-light)">已备物品</div></div>'+
     '<div style="flex:1;min-width:70px;background:var(--primary-bg);border-radius:10px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--primary-dark)">'+totalTodos+'</div><div style="font-size:0.7rem;color:var(--text-light)">负责计划</div><div style="font-size:0.7rem;color:var(--primary)">完成 '+doneTodos+'</div></div>'+
     '</div>';
-  /* 物品列表 */
-  var itemHtml='<div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);margin:8px 0 4px">负责的物品</div>';
-  if(myItems.length===0){itemHtml+='<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0">暂无</div>';}
+  /* 物品列表：全部物品，勾选代表「我备好了」 */
+  var itemHtml='<div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);margin:8px 0 4px">物品准备（勾选代表我已备好）</div>';
+  if(totalItems===0){itemHtml+='<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0">暂无物品</div>';}
   else{
     itemHtml+='<div style="max-height:180px;overflow-y:auto">';
-    for(var mi=0;mi<myItems.length;mi++){
-      var it=myItems[mi];
-      itemHtml+='<div class="todo-item'+(it.bought?' done':'')+'"><input type="checkbox"'+(it.bought?' checked':'')+' data-kind="item" data-id="'+it.id+'" class="mdl-check"><span class="text">'+escapeHtml(it.name)+' <span style="color:var(--text-light);font-size:0.72rem">'+fmtMoney(it.price)+'</span></span></div>';
+    for(var mi=0;mi<allItems.length;mi++){
+      var it=allItems[mi];
+      var isReady=!!(it.readyBy&&it.readyBy[memberId]);
+      itemHtml+='<div class="todo-item'+(isReady?' done':'')+'"><input type="checkbox"'+(isReady?' checked':'')+' data-kind="item" data-id="'+it.id+'" class="mdl-check"><span class="text">'+escapeHtml(it.name)+' <span style="color:var(--text-light);font-size:0.72rem">'+escapeHtml(prepCatName(it.cat))+'</span></span></div>';
     }
     itemHtml+='</div>';
   }
@@ -3037,7 +3251,13 @@ function showMemberDetail(memberId){
       var checked=this.checked;
       if(kind==='item'){
         for(var q=0;q<state.data.prepItems.length;q++){
-          if(state.data.prepItems[q].id===id){state.data.prepItems[q].bought=checked;state.data.prepItems[q]._ts=Date.now();break;}
+          if(state.data.prepItems[q].id===id){
+            if(!state.data.prepItems[q].readyBy){state.data.prepItems[q].readyBy={};}
+            if(checked){state.data.prepItems[q].readyBy[memberId]=true;}
+            else{delete state.data.prepItems[q].readyBy[memberId];}
+            state.data.prepItems[q]._ts=Date.now();
+            break;
+          }
         }
       }else{
         for(var r=0;r<state.data.todos.length;r++){
@@ -3136,59 +3356,12 @@ function renderMemberDivision(prepItems,todos){
       :'<div style="font-size:0.66rem;color:var(--text-light);margin-top:2px">点击头像看分工</div>';
     html+='<div class="member-cell" style="position:relative"><button class="member-del" data-action="delMember" data-id="'+m.id+'">✕</button><div class="member-avatar" style="background:'+memberColor(i)+'" data-action="viewMember" data-id="'+m.id+'">'+escapeHtml((m.name||'?').charAt(0))+'</div><input class="member-name-input" data-id="'+m.id+'" value="'+escapeHtml(m.name)+'">'+claimBtn+'</div>';
   }
-  if(members.length<12){
-    html+='<div class="member-cell" style="display:flex;align-items:center;justify-content:center"><button class="member-add" data-action="addMember">+</button></div>';
-  }
   html+='</div>';
   html+='</div>';
   return html;
 }
-/* 准备物品表单（item 存在则编辑，否则新增） */
-function showPrepForm(item){
-  item=item||null;
-  var cats=['服饰装备','个护美妆','药品保健','证件','食品','其他'];
-  var catHtml='';
-  for(var c2=0;c2<cats.length;c2++){catHtml+='<option'+(item&&item.category===cats[c2]?' selected':'')+'>'+cats[c2]+'</option>';}
-  var sheet=document.getElementById('formModalSheet');
-  sheet.innerHTML='<div class="form-modal-title">'+(item?'修改必买物品':'添加必买物品')+'<button id="closeForm">✕</button></div>'+
-    '<div class="form-row"><div><label>分类</label><select id="fCategory">'+catHtml+'</select></div>'+
-    '<div><label>物品名称</label><input type="text" id="fName" placeholder="如：登山杖" value="'+(item?escapeHtml(item.name):'')+'"></div></div>'+
-    '<div class="form-row"><div><label>价格 ¥</label><input type="number" id="fPrice" step="0.01" placeholder="0.00" value="'+(item?item.price:'')+'"></div>'+
-    '<div><label>购买渠道</label><input type="text" id="fChannel" placeholder="如：淘宝" value="'+(item?escapeHtml(item.channel):'')+'"></div></div>'+
-    '<div class="form-row"><div><label>负责人</label><select id="fOwner">'+memberSelectOptions(item?item.owner:'')+'</select></div>'+
-    '<div><label>是否已购</label><select id="fBought"><option value="0"'+(item&&!item.bought?' selected':'')+'>未购</option><option value="1"'+(item&&item.bought?' selected':'')+'>已购</option></select></div></div>'+
-    '<div class="form-row"><div><label>是否逾期</label><select id="fOverdue"><option value="0"'+(item&&!item.overdue?' selected':'')+'>否</option><option value="1"'+(item&&item.overdue?' selected':'')+'>是</option></select></div></div>'+
-    '<button class="btn btn-primary btn-block" style="margin-top:12px" id="savePrepBtn">保存</button>';
-  document.getElementById('formModal').classList.add('show');
-  document.getElementById('closeForm').onclick=function(){document.getElementById('formModal').classList.remove('show');};
-  document.getElementById('savePrepBtn').onclick=function(){
-    var name=document.getElementById('fName').value.trim();
-    if(!name){showToast('请填写物品名称');return;}
-    var val={
-      category:document.getElementById('fCategory').value,
-      name:name,
-      price:parseFloat(document.getElementById('fPrice').value)||0,
-      channel:document.getElementById('fChannel').value.trim()||'待定',
-      owner:document.getElementById('fOwner').value,
-      bought:document.getElementById('fBought').value==='1',
-      overdue:document.getElementById('fOverdue').value==='1',
-      _ts:Date.now()
-    };
-    if(item){
-      for(var i=0;i<state.data.prepItems.length;i++){
-        if(state.data.prepItems[i].id===item.id){state.data.prepItems[i]=Object.assign({},state.data.prepItems[i],val);break;}
-      }
-    }else{
-      val.id=genId();
-      state.data.prepItems.push(val);
-    }
-    saveData();
-    document.getElementById('formModal').classList.remove('show');
-    renderPrep();showToast(item?'已修改':'已添加');
-  };
-}
-
 /* ============================================================
+   模块 2：每日记账/* ============================================================
    模块 2：每日记账（双层账本）
    ============================================================ */
 function renderExpense(){
@@ -3734,65 +3907,63 @@ function renderOutfit(){
   var today=todayStr();
   var todayIdx=daysBetween(TRIP_START,today);
   var todayDayNum=todayIdx>=0&&todayIdx<11?(todayIdx+1):null;
-  /* 穿搭建议卡片（基于历史同期气候） */
+  /* 穿搭建议卡片（基于历史同期气候）—— 只留总建议，逐日气候合到下面的并列卡片里 */
   var weatherHtml='<div class="today-section"><div class="today-title">'+svgIcon('thermo')+'行程穿搭建议 <span style="font-size:0.68rem;color:var(--text-light);font-weight:400">（9月底-10月初历史同期气候参考）</span></div>'+
     '<div class="weather-brief">'+
       '<div class="weather-brief-item">'+svgIcon('layers')+'<span><strong>洋葱式穿法</strong>：昼夜温差 15°C+，内层速干/保暖 + 抓绒 + 冲锋衣，热了脱冷了加，脱下的衣服放车上</span></div>'+
-      '<div class="weather-brief-item">'+svgIcon('sun')+'<span><strong>紫外线极强</strong>：墨镜 + 50 倍防晒霜 + 遮阳帽；盐湖、戈壁、雪线反光加倍，防晒霜每 3 小时补涂</span></div>'+
+      '<div class="weather-brief-item">'+svgIcon('sun')+'<span><strong>紫外线极强</strong>：墨镜 + 50倍防晒霜 + 遮阳帽；盐湖、戈壁、雪线反光加倍，防晒霜每 3 小时补涂</span></div>'+
       '<div class="weather-brief-item">'+svgIcon('glasses')+'<span><strong>羽绒必带</strong>：看星空、日出、青海湖/大柴旦早晚 0°C 左右；高原干燥，润唇膏和补水喷雾随身</span></div>'+
-    '</div>';
-  weatherHtml+='<div class="weather-list">';
-  for(var w=0;w<WEATHER_TIPS.length;w++){
-    var wt=WEATHER_TIPS[w];
-    var wCls='';
-    if(todayDayNum===wt.day){wCls=' today-w';}
-    else if(wt.day<todayDayNum){wCls=' past-w';}
-    weatherHtml+='<div class="weather-row'+wCls+'"><div class="weather-day-tag"><span class="d">DAY</span><span class="n">'+wt.day+'</span></div><div class="weather-row-body"><div class="weather-row-top"><span class="weather-area">'+escapeHtml(wt.area)+'</span><span class="weather-temp">'+wt.temp+'</span>'+(todayDayNum===wt.day?'<span class="today-mark">今天</span>':'')+'</div><div class="weather-tip">'+escapeHtml(wt.tip)+'</div>'+
-      '<div style="margin-top:6px"><button class="ai-suggest-btn" data-ai-outfit=\''+escapeHtml(JSON.stringify({day:wt.day,area:wt.area,temp:wt.temp,tip:wt.tip}))+'\'>'+'✨ AI 穿搭建议</button></div>'+
-      '</div></div>';
+    '</div></div>';
+  /* 按日期分组穿搭记录 */
+  var byDate={};
+  for(var k=0;k<data.outfits.length;k++){
+    var dd=data.outfits[k].date;
+    if(!byDate[dd]){byDate[dd]=[];}
+    byDate[dd].push(data.outfits[k]);
   }
-  weatherHtml+='</div></div>';
-  /* 今日穿搭 */
-  var todayOutfits=[];
-  for(var i=0;i<data.outfits.length;i++){
-    if(data.outfits[i].date===today){todayOutfits.push(data.outfits[i]);}
-  }
-  var todayHtml='<div class="card"><div class="card-title">'+svgIcon('today')+'今日穿搭</div>';
-  if(todayOutfits.length===0){todayHtml+='<div class="today-empty">今日暂无记录</div>';}
-  else{
-    for(var j=0;j<todayOutfits.length;j++){
-      var to=todayOutfits[j];
-      todayHtml+='<div class="outfit-card" style="margin-bottom:6px"><div class="outfit-header"><span class="outfit-date">'+fmtDate(to.date)+'</span><span class="outfit-person">'+escapeHtml(to.person)+'</span></div><div class="outfit-desc">'+escapeHtml(to.desc)+'</div></div>';
-    }
-  }
-  todayHtml+='</div>';
   /* 工具栏 */
   var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addOutfitBtn">'+svgIcon('plus')+'记录穿搭</button></div>';
-  /* 按日期分组 */
-  var byDate={};
-  var dates=[];
-  for(var k=0;k<data.outfits.length;k++){
-    var d=data.outfits[k].date;
-    if(!byDate[d]){byDate[d]=[];dates.push(d);}
-    byDate[d].push(data.outfits[k]);
-  }
-  dates.sort().reverse();
-  var listHtml='<div class="card"><div class="card-title">穿搭记录</div>';
-  if(dates.length===0){listHtml+='<div class="empty">'+svgIcon('outfit')+'<div>暂无记录，点上方添加</div></div>';}
-  else{
-    for(var m=0;m<dates.length;m++){
-      var dd=dates[m];
-      var dayOutfits=byDate[dd];
-      listHtml+='<div style="margin-bottom:10px"><div style="font-size:0.82rem;font-weight:600;color:var(--primary-dark);margin-bottom:6px;padding-left:4px;border-left:3px solid var(--primary-light)">'+fmtDate(dd)+'</div>';
+  /* 逐日：行程 + 穿搭并列 */
+  var listHtml='<div class="card"><div class="card-title">'+svgIcon('outfit')+'行程与穿搭 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（DAY1 兰州-西宁，右边是大家的穿搭记录）</span></div>';
+  for(var i=0;i<PRESET_ROUTE.length;i++){
+    var day=PRESET_ROUTE[i];
+    var wt=WEATHER_TIPS[i]||{};
+    var dayOutfits=byDate[day.date]||[];
+    var cls='';
+    if(todayDayNum===day.day){cls=' today';}
+    else if(day.date<today){cls=' past';}
+    listHtml+='<div class="day-outfit-card'+cls+'">';
+    listHtml+='<div class="day-outfit-head"><span class="day-num">DAY'+day.day+'</span><span class="day-date">'+fmtDate(day.date)+'</span>';
+    if(todayDayNum===day.day){listHtml+='<span class="day-badge" style="background:var(--accent-light);color:#8a5a1a">今日</span>';}
+    else if(day.date<today){listHtml+='<span class="day-badge">已完成</span>';}
+    else{listHtml+='<span class="day-badge">第'+day.day+'天</span>';}
+    listHtml+='</div>';
+    listHtml+='<div class="day-outfit-grid">';
+    /* 左：行程 */
+    listHtml+='<div class="day-outfit-route">';
+    listHtml+='<div class="r-line"><strong>'+escapeHtml(day.route)+'</strong></div>';
+    listHtml+='<div class="r-line">亮点：<strong>'+escapeHtml(day.highlight)+'</strong></div>';
+    listHtml+='<div class="r-line">住宿：'+escapeHtml(day.stay)+'</div>';
+    if(wt.temp){listHtml+='<span class="r-temp">'+escapeHtml(wt.temp)+'</span>';}
+    if(wt.tip){listHtml+='<div class="r-tip">'+escapeHtml(wt.tip)+'</div>';}
+    listHtml+='<div style="margin-top:6px"><button class="ai-suggest-btn" data-ai-outfit=\''+escapeHtml(JSON.stringify({day:day.day,area:day.city,temp:wt.temp||'',tip:wt.tip||''}))+'\'>'+'✨ AI 穿搭建议</button></div>';
+    listHtml+='</div>';
+    /* 右：穿搭记录 */
+    listHtml+='<div class="day-outfit-list">';
+    if(dayOutfits.length===0){
+      listHtml+='<div class="outfit-empty">还没有穿搭记录</div>';
+    }else{
       for(var n=0;n<dayOutfits.length;n++){
         var o=dayOutfits[n];
-        listHtml+='<div class="outfit-card"><div class="outfit-header"><span class="outfit-date">'+escapeHtml(o.person||'未指定')+'</span></div><div class="outfit-desc">'+escapeHtml(o.desc||'')+'</div><div class="outfit-actions"><button class="btn btn-sm btn-outline" data-action="delOutfit" data-id="'+o.id+'">'+svgIcon('trash')+'删除</button></div></div>';
+        listHtml+='<div class="outfit-row"><span class="o-person">'+escapeHtml(o.person||'未署名')+'</span><span class="o-desc">'+escapeHtml(o.desc||'')+'</span><button class="o-del" data-action="delOutfit" data-id="'+o.id+'" title="删除">'+svgIcon('trash')+'</button></div>';
       }
-      listHtml+='</div>';
     }
+    listHtml+='</div>';
+    listHtml+='</div>'; /* grid */
+    listHtml+='</div>'; /* day-outfit-card */
   }
   listHtml+='</div>';
-  p.innerHTML=weatherHtml+todayHtml+toolbar+listHtml;
+  p.innerHTML=weatherHtml+toolbar+listHtml;
   var addBtn=document.getElementById('addOutfitBtn');
   if(addBtn){addBtn.onclick=function(){showOutfitForm();};}
   var delBtns=p.querySelectorAll('[data-action="delOutfit"]');
@@ -3800,8 +3971,8 @@ function renderOutfit(){
     delBtns[db].onclick=function(){
       var id=this.getAttribute('data-id');
       showConfirm('删除穿搭','确定删除这条穿搭记录吗？',function(){
-        for(var i=0;i<state.data.outfits.length;i++){
-          if(state.data.outfits[i].id===id){state.data.outfits[i]._deleted=true;state.data.outfits[i]._ts=Date.now();break;}
+        for(var i2=0;i2<state.data.outfits.length;i2++){
+          if(state.data.outfits[i2].id===id){state.data.outfits[i2]._deleted=true;state.data.outfits[i2]._ts=Date.now();break;}
         }
         saveData();renderOutfit();showToast('已删除');
       });
@@ -4021,8 +4192,12 @@ function computeSettlement(data){
   var paid={};
   for(i=0;i<N;i++){paid[members[i].id]=0;}
   var hasPayerRecords=false;
+  /* coveredIds 存在 → 只算结算后新加的账，老账按 id 跳过；
+     没有 coveredIds（老快照）→ 退回原来的 paid/owed 总额减法，兼容老数据。 */
+  var cov=(settled&&settled.coveredIds)||null;
   for(i=0;i<expenses.length;i++){
     var e=expenses[i];
+    if(cov&&cov.hasOwnProperty(e.id)){continue;}
     var amt=Number(e.amount)||0;
     if(e.payer&&paid.hasOwnProperty(e.payer)){
       paid[e.payer]+=amt;
@@ -4035,6 +4210,7 @@ function computeSettlement(data){
   var collectiveTotal=0,hasUnequal=false;
   for(i=0;i<expenses.length;i++){
     var e2=expenses[i];
+    if(cov&&cov.hasOwnProperty(e2.id)){continue;}
     var amt2=Number(e2.amount)||0;
     if(e2.type==='collective'){
       collectiveTotal+=amt2;
@@ -4063,10 +4239,14 @@ function computeSettlement(data){
   if(settled){
     coveredCount=settled.count||0;
     coveredTotal=settled.total||0;
-    for(i=0;i<N;i++){
-      var mid=members[i].id;
-      if(settled.paid&&settled.paid.hasOwnProperty(mid)){paid[mid]-=(Number(settled.paid[mid])||0);}
-      if(settled.owed&&settled.owed.hasOwnProperty(mid)){owed[mid]-=(Number(settled.owed[mid])||0);}
+    /* 新快照有 coveredIds：上面已经按 id 跳过了，这里不用再减总额。
+       老快照没有 coveredIds：只能按当时的 paid/owed 总额减，不精确但兼容老数据。 */
+    if(!settled.coveredIds){
+      for(i=0;i<N;i++){
+        var mid=members[i].id;
+        if(settled.paid&&settled.paid.hasOwnProperty(mid)){paid[mid]-=(Number(settled.paid[mid])||0);}
+        if(settled.owed&&settled.owed.hasOwnProperty(mid)){owed[mid]-=(Number(settled.owed[mid])||0);}
+      }
     }
   }
   /* 3. 计算每人净额（实付 - 应承担） */
@@ -4592,13 +4772,13 @@ function buildAISystemPrompt(){
       '用户说"午饭花了120""帮我加个登山杖""9月20号订莫高窟门票"这类话时，'+
       '你要回一个指令，单独占一行，前后不要加代码块标记。四种类型：\n'+
       '@@ADD{"kind":"expense","amount":120,"category":"餐饮","type":"collective","note":"午饭","exclude":["老王"]}\n'+
-      '@@ADD{"kind":"prep","name":"登山杖","category":"服饰装备","price":80,"channel":"淘宝","owner":"小美"}\n'+
+      '@@ADD{"kind":"prep","name":"登山杖","category":"服饰装备"}\n'+
       '@@ADD{"kind":"todo","date":"2026-09-20","endDate":"2026-09-20","text":"订莫高窟门票","owners":["阿杰"]}\n'+
       '@@ADD{"kind":"outfit","date":"2026-09-26","person":"小美","desc":"冲锋衣+速干裤"}\n'+
       '  - expense：amount 必填数字；category 从 '+EXPENSE_CATEGORIES.join('/')+' 里挑最接近的；'+
       'type 大家一起花的用 collective、某人自己买的用 personal；'+
       'exclude 可选，填没参与的人的名字（用户说"某人没去/没吃"时）\n'+
-      '  - prep：name 必填；category 从 服饰装备/个护美妆/药品保健/证件/食品/其他 里挑；price/channel 可选\n'+
+      '  - prep：name 必填；category 从 服饰装备/个护美妆/药品保健/证件/食品/其他 里挑，或自定义板块名\n'+
       '  - todo（计划）：text 必填；date 是开始日，必须 YYYY-MM-DD；'+
       'endDate 是结束日，单天的计划就填成和 date 一样，'+
       '用户说"9月25到30号"这种一段时间，date 填 2026-09-25、endDate 填 2026-09-30；'+
@@ -4850,23 +5030,16 @@ function applyAIAdd(o){
 }
 /* 必买物品 */
 function confirmAIPrep(o){
-  var cats=['服饰装备','个护美妆','药品保健','证件','食品','其他'];
-  var cat=o.category||'其他',okc=false,i;
-  for(i=0;i<cats.length;i++){if(cats[i]===cat){okc=true;break;}}
-  if(!okc){cat='其他';}
-  var price=Number(o.price)||0;
-  var owner=resolveMemberId(o.owner);
+  /* AI 加物品：自动找/建对应分类板块，新模型不要价格/渠道/负责人 */
+  var catName=o.category||'其他';
+  var catId=prepCatId(catName);
   var body='物品：'+o.name+'\n'+
-    '分类：'+cat+'\n'+
-    (price>0?('预估价：'+fmtMoney(price)+'\n'):'')+
-    '购买渠道：'+(o.channel||'待定')+'\n'+
-    '负责人：'+(owner?memberNameById(owner):'未指定')+'\n'+
+    '板块：'+escapeHtml(prepCatName(catId))+'\n'+
     '\n加到必买清单吗？';
   showConfirm('AI 帮你加进必买清单',body,function(){
     state.data.prepItems.push({
-      id:genId(),category:cat,name:String(o.name).trim(),
-      price:price,channel:o.channel||'待定',owner:owner,
-      bought:false,overdue:false,_ts:Date.now()
+      id:genId(),cat:catId,name:String(o.name).trim(),
+      readyBy:{},_ts:Date.now()
     });
     saveData();showToast('已加入必买清单');renderAll();
   });
