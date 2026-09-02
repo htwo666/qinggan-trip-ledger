@@ -287,6 +287,9 @@ tr:hover{background:rgba(45,139,139,0.03);}
 .outfit-row .o-del{border:none;background:transparent;color:var(--text-light);cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;opacity:0.5;}
 .outfit-row .o-del:hover{opacity:1;color:var(--danger);}
 .outfit-row .o-del svg{width:13px;height:13px;}
+.outfit-row .o-edit{border:none;background:transparent;color:var(--text-light);cursor:pointer;padding:0 2px;flex-shrink:0;display:flex;align-items:center;opacity:0.5;}
+.outfit-row .o-edit:hover{opacity:1;color:var(--primary);}
+.outfit-row .o-edit svg{width:13px;height:13px;}
 .outfit-empty{font-size:0.74rem;color:var(--text-light);font-style:italic;padding:6px 8px;}
 /* ========== 穿搭建议 ========== */
 .weather-brief{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
@@ -3112,13 +3115,19 @@ function planByBadge(t){
    （用 checkbox 而不是 multiple select —— 手机上 multiple select 极难点） */
 /* ---------- 必买清单分类板块 ---------- */
 var DEFAULT_PREP_CATS=['服饰装备','个护美妆','药品保健','证件','食品','其他'];
-/* 取存活的分类列表；全新空间自动注入默认分类，保证页面打开就有板块可看 */
+/* 取存活的分类列表；全新空间（从未初始化过）自动注入默认分类。
+   关键：检查 raw 数组长度（包括已删除的墓碑），不是 aliveList。
+   否则用户删掉所有板块后，每次打开页面 aliveList 都为空，会自动冒出 6 个默认板块。 */
 function prepCats(){
-  var list=aliveList(state.data&&state.data.prepCategories);
-  if(!list.length){
+  var raw=state.data&&state.data.prepCategories;
+  if(!raw){raw=[];state.data.prepCategories=raw;}
+  var list=aliveList(raw);
+  /* 只有 raw 完全为空（从未初始化过）才注入默认分类。
+     raw 有元素（包括墓碑）说明用户已经操作过，不再自动注入。 */
+  if(!raw.length){
     for(var i=0;i<DEFAULT_PREP_CATS.length;i++){
       var c={id:genId(),name:DEFAULT_PREP_CATS[i],_ts:Date.now()};
-      state.data.prepCategories.push(c);
+      raw.push(c);
       list.push(c);
     }
     saveData();
@@ -3978,7 +3987,7 @@ function renderOutfit(){
     }else{
       for(var n=0;n<dayOutfits.length;n++){
         var o=dayOutfits[n];
-        listHtml+='<div class="outfit-row"><span class="o-person">'+escapeHtml(o.person||'未署名')+'</span><span class="o-desc">'+escapeHtml(o.desc||'')+'</span><button class="o-del" data-action="delOutfit" data-id="'+o.id+'" title="删除">'+svgIcon('trash')+'</button></div>';
+        listHtml+='<div class="outfit-row"><span class="o-person">'+escapeHtml(o.person||'未署名')+'</span><span class="o-desc">'+escapeHtml(o.desc||'')+'</span><button class="o-edit" data-action="editOutfit" data-id="'+o.id+'" title="修改">'+svgIcon('edit')+'</button><button class="o-del" data-action="delOutfit" data-id="'+o.id+'" title="删除">'+svgIcon('trash')+'</button></div>';
       }
     }
     listHtml+='</div>';
@@ -3989,6 +3998,13 @@ function renderOutfit(){
   p.innerHTML=weatherHtml+toolbar+listHtml;
   var addBtn=document.getElementById('addOutfitBtn');
   if(addBtn){addBtn.onclick=function(){showOutfitForm();};}
+  var editBtns=p.querySelectorAll('[data-action="editOutfit"]');
+  for(var eb=0;eb<editBtns.length;eb++){
+    editBtns[eb].onclick=function(){
+      var id=this.getAttribute('data-id');
+      showOutfitForm(id);
+    };
+  }
   var delBtns=p.querySelectorAll('[data-action="delOutfit"]');
   for(var db=0;db<delBtns.length;db++){
     delBtns[db].onclick=function(){
@@ -4012,8 +4028,17 @@ function renderOutfit(){
     };
   }
 }
-function showOutfitForm(){
+function showOutfitForm(editId){
   var today=todayStr();
+  /* 编辑模式：找到对应记录 */
+  var editing=false,editRec=null;
+  if(editId){
+    for(var ei=0;ei<state.data.outfits.length;ei++){
+      if(state.data.outfits[ei].id===editId&&!state.data.outfits[ei]._deleted){
+        editing=true;editRec=state.data.outfits[ei];break;
+      }
+    }
+  }
   /* 从已有记录中提取用过的名字，生成 datalist 建议 */
   var nameSet={};
   var omm=aliveMembers();
@@ -4026,26 +4051,33 @@ function showOutfitForm(){
     if(nameSet.hasOwnProperty(nk)&&nk){nameOpts+='<option value="'+escapeHtml(nk)+'">';}
   }
   var sheet=document.getElementById('formModalSheet');
-  sheet.innerHTML='<div class="form-modal-title">记录穿搭<button id="closeForm">✕</button></div>'+
-    '<div class="form-row"><div><label>日期</label><input type="date" id="fDate" value="'+today+'"></div>'+
-    '<div><label>人物姓名（可自由输入）</label><input type="text" id="fPerson" list="personNameList" placeholder="输入姓名，如：小美"><datalist id="personNameList">'+nameOpts+'</datalist></div></div>'+
-    '<div class="form-row"><div style="flex:1"><label>穿搭描述</label><textarea id="fDesc" placeholder="如：冲锋衣+抓绒+长裤，高原防晒帽"></textarea></div></div>'+
-    '<button class="btn btn-primary btn-block" style="margin-top:12px" id="saveOutfitBtn">保存</button>';
+  var initDate=editing?editRec.date:today;
+  var initPerson=editing?(editRec.person||''):'';
+  var initDesc=editing?(editRec.desc||''):'';
+  sheet.innerHTML='<div class="form-modal-title">'+(editing?'修改穿搭':'记录穿搭')+'<button id="closeForm">✕</button></div>'+
+    '<div class="form-row"><div><label>日期</label><input type="date" id="fDate" value="'+initDate+'"></div>'+
+    '<div><label>人物姓名（可自由输入）</label><input type="text" id="fPerson" list="personNameList" placeholder="输入姓名，如：小美" value="'+escapeHtml(initPerson)+'"><datalist id="personNameList">'+nameOpts+'</datalist></div></div>'+
+    '<div class="form-row"><div style="flex:1"><label>穿搭描述</label><textarea id="fDesc" placeholder="如：冲锋衣+抓绒+长裤，高原防晒帽">'+escapeHtml(initDesc)+'</textarea></div></div>'+
+    '<button class="btn btn-primary btn-block" style="margin-top:12px" id="saveOutfitBtn">'+(editing?'保存修改':'保存')+'</button>';
   document.getElementById('formModal').classList.add('show');
   document.getElementById('closeForm').onclick=function(){document.getElementById('formModal').classList.remove('show');};
   document.getElementById('saveOutfitBtn').onclick=function(){
-    var o={
-      id:genId(),
-      date:document.getElementById('fDate').value,
-      person:document.getElementById('fPerson').value.trim()||'未署名',
-      desc:document.getElementById('fDesc').value.trim(),
-      _ts:Date.now()
-    };
-    if(!o.date){showToast('请选择日期');return;}
-    if(!o.desc){showToast('请填写描述');return;}
-    state.data.outfits.push(o);saveData();
+    var vDate=document.getElementById('fDate').value;
+    var vPerson=document.getElementById('fPerson').value.trim()||'未署名';
+    var vDesc=document.getElementById('fDesc').value.trim();
+    if(!vDate){showToast('请选择日期');return;}
+    if(!vDesc){showToast('请填写描述');return;}
+    if(editing){
+      editRec.date=vDate;
+      editRec.person=vPerson;
+      editRec.desc=vDesc;
+      editRec._ts=Date.now();
+    }else{
+      state.data.outfits.push({id:genId(),date:vDate,person:vPerson,desc:vDesc,_ts:Date.now()});
+    }
+    saveData();
     document.getElementById('formModal').classList.remove('show');
-    renderOutfit();showToast('已记录');
+    renderOutfit();showToast(editing?'已更新':'已记录');
   };
 }
 
@@ -4631,7 +4663,7 @@ function showSettingsModal(){
       if(kind==='prep'){
         title='清空必买清单';
         msg='将删除全部 '+prepN+' 件物品和 '+catN+' 个分类板块，此操作不可撤销。确定继续吗？';
-        fn=function(){state.data.prepItems=[];state.data.prepCategories=[];saveData();renderAll();};
+        fn=function(){state.data.prepItems=[];state.data.prepCategories=[{id:genId(),name:'_cleared',_deleted:true,_ts:Date.now()}];saveData();renderAll();};
       }else if(kind==='todo'){
         title='清空计划';
         msg='将删除全部 '+todoN+' 条计划，此操作不可撤销。确定继续吗？';
@@ -4648,7 +4680,7 @@ function showSettingsModal(){
         title='清空全部数据';
         msg='将删除所有模块的全部数据（成员保留，预付大项 '+preN+' 项保留），此操作不可撤销。确定继续吗？';
         fn=function(){
-          state.data.prepItems=[];state.data.prepCategories=[];
+          state.data.prepItems=[];state.data.prepCategories=[{id:genId(),name:'_cleared',_deleted:true,_ts:Date.now()}];
           state.data.todos=[];state.data.outfits=[];state.data.expenses=[];
           saveData();renderAll();
         };
