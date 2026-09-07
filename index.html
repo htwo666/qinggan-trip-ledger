@@ -274,6 +274,9 @@ tr:hover{background:rgba(45,139,139,0.03);}
 .day-outfit-head .day-date{font-size:0.76rem;color:var(--text-light);}
 .day-outfit-head .day-badge{font-size:0.66rem;padding:2px 8px;border-radius:10px;background:var(--primary-bg);color:var(--primary-dark);white-space:nowrap;}
 .day-outfit-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+.day-outfit-add-btn{margin-left:auto;border:1px solid var(--primary-light);background:var(--primary-bg);color:var(--primary-dark);font-family:inherit;font-size:0.7rem;padding:3px 10px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0;}
+.day-outfit-add-btn:active{transform:scale(0.96);}
+.day-outfit-add-btn svg{width:12px;height:12px;}
 @media(min-width:640px){.day-outfit-grid{grid-template-columns:1fr 1fr;}}
 .day-outfit-route{background:var(--primary-bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:0.8rem;}
 .day-outfit-route .r-line{margin:3px 0;color:var(--text);line-height:1.45;}
@@ -2667,7 +2670,7 @@ function renderPrep(){
   }
   var todoCard='<div class="card"><div class="card-title">'+svgIcon('today')+'计划清单 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400">（未完成 '+(overdueTodos.length+todayTodos.length+upcomingTodos.length)+' · 已完成 '+doneTodos.length+'）</span></div>';
   if(overdueTodos.length+todayTodos.length+upcomingTodos.length===0&&doneTodos.length===0){
-    todoCard+='<div class="empty">'+svgIcon('check')+'<div>暂无计划，点下方「添加计划」</div></div>';
+    todoCard+='<div class="empty">'+svgIcon('check')+'<div>暂无计划，点上方「添加计划」</div></div>';
   }else{
     var allOpen=overdueTodos.concat(todayTodos).concat(upcomingTodos);
     for(var a=0;a<allOpen.length;a++){
@@ -2760,7 +2763,7 @@ function renderPrep(){
   var toolbar='<div class="toolbar"><button class="btn btn-primary btn-sm" id="addTodoBtn">'+svgIcon('plus')+'添加计划</button></div>';
   /* 成员分工 */
   var memberHtml=renderMemberDivision(prepItems,todos);
-  p.innerHTML=todayHtml+calHtml+todoCard+memberHtml+boardHtml+toolbar;
+  p.innerHTML=toolbar+todayHtml+calHtml+todoCard+memberHtml+boardHtml;
   /* 事件 */
   var addTodoBtn=document.getElementById('addTodoBtn');
   if(addTodoBtn){addTodoBtn.onclick=function(){showTodoForm();};}
@@ -3969,6 +3972,7 @@ function renderOutfit(){
     if(todayDayNum===day.day){listHtml+='<span class="day-badge" style="background:var(--accent-light);color:#8a5a1a">今日</span>';}
     else if(day.date<today){listHtml+='<span class="day-badge">已完成</span>';}
     else{listHtml+='<span class="day-badge">第'+day.day+'天</span>';}
+    listHtml+='<button class="day-outfit-add-btn" data-outfit-date="'+day.date+'" title="为这一天记录穿搭">'+svgIcon('plus')+'记录</button>';
     listHtml+='</div>';
     listHtml+='<div class="day-outfit-grid">';
     /* 左：行程 */
@@ -3998,6 +4002,13 @@ function renderOutfit(){
   p.innerHTML=weatherHtml+toolbar+listHtml;
   var addBtn=document.getElementById('addOutfitBtn');
   if(addBtn){addBtn.onclick=function(){showOutfitForm();};}
+  var dayAddBtns=p.querySelectorAll('[data-outfit-date]');
+  for(var da=0;da<dayAddBtns.length;da++){
+    dayAddBtns[da].onclick=function(){
+      var dt=this.getAttribute('data-outfit-date');
+      showOutfitForm(null,dt);
+    };
+  }
   var editBtns=p.querySelectorAll('[data-action="editOutfit"]');
   for(var eb=0;eb<editBtns.length;eb++){
     editBtns[eb].onclick=function(){
@@ -4028,7 +4039,7 @@ function renderOutfit(){
     };
   }
 }
-function showOutfitForm(editId){
+function showOutfitForm(editId,presetDate){
   var today=todayStr();
   /* 编辑模式：找到对应记录 */
   var editing=false,editRec=null;
@@ -4051,7 +4062,7 @@ function showOutfitForm(editId){
     if(nameSet.hasOwnProperty(nk)&&nk){nameOpts+='<option value="'+escapeHtml(nk)+'">';}
   }
   var sheet=document.getElementById('formModalSheet');
-  var initDate=editing?editRec.date:today;
+  var initDate=editing?editRec.date:(presetDate||today);
   var initPerson=editing?(editRec.person||''):'';
   var initDesc=editing?(editRec.desc||''):'';
   sheet.innerHTML='<div class="form-modal-title">'+(editing?'修改穿搭':'记录穿搭')+'<button id="closeForm">✕</button></div>'+
